@@ -1,0 +1,6 @@
+.err_text{
+    color: red;
+    font-size: 14px;
+    margin-top: 5px;
+    display: block; /* 預設隱藏 */
+}
