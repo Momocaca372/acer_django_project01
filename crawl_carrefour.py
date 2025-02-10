@@ -9,6 +9,16 @@ session = requests.Session()
 # 設定 URL
 url = 'https://online.carrefour.com.tw/zh/homepage/'
 def crawl():
+    """
+    爬取家樂福線上商城的商品資訊，並將數據存入 CSV 文件。
+
+    流程：
+    1. 發送 GET 請求獲取首頁 HTML
+    2. 解析首頁，獲取各商品分類的鏈接
+    3. 依次訪問每個分類頁面，爬取商品的名稱、價格、圖片及鏈接
+    4. 遍歷分頁，確保抓取所有商品
+    5. 將數據存入 `carrefour.csv` 文件
+    """
     # 發送 GET 請求來抓取首頁
     r = requests.get(url, headers=my_headers)
     
@@ -79,10 +89,10 @@ def crawl():
     
                                     # 寫入抓取的資料到 CSV 文件
                                     writer.writerow({'name': title_text, 'money': money_text, 'img': img_url, 'link': link_url})
-    
+                                    #單獨驗證時再打開
                                     # 打印結果方便檢查
-                                    print(title_text)
-                                    print("價格: " + money_text)
-                                    print(img_url)
-                                    print(link_url)
-                                    print("---------------分隔-----------------")
+                                    # print(title_text)
+                                    # print("價格: " + money_text)
+                                    # print(img_url)
+                                    # print(link_url)
+                                    # print("---------------分隔-----------------")
