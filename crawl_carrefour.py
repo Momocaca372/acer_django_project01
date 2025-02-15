@@ -14,8 +14,7 @@ my_headers = {
 url = 'https://online.carrefour.com.tw/zh/homepage/'
 
 # 連接 SQLite 資料庫
-db_filename = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
-conn = sqlite3.connect(db_filename)
+conn = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
 cursor = conn.cursor()
 
 # 建立資料表（如果不存在）
