@@ -1,66 +1,130 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import requests
+from bs4 import BeautifulSoup
+import sqlite3
+import concurrent.futures
+import os
+import BIBIGOproject.Myproject.settings as settings
 
-# 啟動 Chrome 瀏覽器
-costoc = webdriver.Chrome()
+# 設置 headers，模擬瀏覽器行為，防止請求被拒絕
+my_headers = {
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+}
 
-# 初始化一個空的列表來儲存抓取到的鏈接
-linklist = []
+# 設定好事多線上商城的首頁 URL
+url = 'https://www.costco.com.tw/'
 
-# 進入成本網站的首頁
-costoc.get("https://www.costco.com.tw/")
+# 連接 SQLite 資料庫
+conn = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
+cursor = conn.cursor()
 
-# 等待頁面中的特定元素出現，最多等 20 秒
-WebDriverWait(costoc, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a.show-sub-menu')))
+# 建立資料表（如果不存在）
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS product_table (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        price TEXT,
+        img_url TEXT,
+        link TEXT,
+        classification TEXT,
+        store TEXT
+    )
+''')
+conn.commit()
 
-# 提取頁面中所有符合條件的鏈接
-links = costoc.find_elements(By.CSS_SELECTOR, 'a.show-sub-menu.hidden-xs.hidden-sm.ng-star-inserted')
 
-# 迭代每個鏈接並提取其 href 屬性
-for link in links:
-    href1 = link.get_attribute('href')
-    linklist.append(href1)
+def get_soup(url):
+    """發送 GET 請求並回傳 BeautifulSoup 解析後的內容"""
+    try:
+        response = requests.get(url, headers=my_headers, timeout=10)
+        if response.status_code == 200:
+            return BeautifulSoup(response.text, 'html.parser')
+    except requests.RequestException as e:
+        print(f"請求失敗: {url}, 錯誤: {e}")
+    return None
 
-# 關閉瀏覽器
-costoc.quit()
 
-# 初始化第二個空的列表來儲存進一步抓取的鏈接
-linklist2 = []
+def get_category_links():
+    """抓取所有商品分類的鏈接"""
+    soup = get_soup(url)
+    if soup:
+        link_list = [ a.get('href') for a in soup.select('ul#theMenu a.ng-star-inserted')]
+        link_list = list(filter(lambda x: x != 'javascript:void(0)', link_list))
+        return link_list
+    return []  # 修正：避免返回 None
+def scrape_product_page(product_url):
+    """爬取單個商品頁面的詳細資訊"""
+    soup = get_soup(product_url)
+    if not soup:
+        return None
 
-# 迭代每個從首頁抓取到的鏈接
-n = 0
-for a in linklist:
-    # 啟動一個新的 Chrome 瀏覽器進入每個鏈接
-    costoc1 = webdriver.Chrome()
-    costoc1.get(a)
+    try:
+        title = soup.find('h1').text.strip()
+        price = soup.find('span', class_='notranslate ng-star-inserted').text.strip()[1:]
+        img_url = 'https://www.costco.com.tw' + soup.select_one('div.thumb img').get('src')
 
-    # 提取該頁面中的所有圖片鏈接
-    links2 = costoc1.find_elements(By.CSS_SELECTOR, 'a.thumb')
+        # 抓取分類，如果找不到，則設定為 "未知分類"
+        try:
+            classification = soup.select('div.breadcrumb-section a')[3].text.strip()
+        except (IndexError, AttributeError):
+            classification = "未知分類"
 
-    # 提取該頁面的“下一頁”鏈接
-    nextlinks = costoc1.find_elements(By.CSS_SELECTOR, 'a.page-link-next')
+        print(f'商品: {title}, 價格: {price}, 分類: {classification}')
+        return {'name': title, 'price': price, 'img_url': img_url, 'link': product_url, 'classification': classification,'store':'costco'}
+    except AttributeError:
+        return None
 
-    # 迭代圖片鏈接和下一頁鏈接的組合
-    for link2, b in zip(links2, nextlinks):
-        # 提取圖片鏈接的 href 屬性
-        href2 = link2.get_attribute('href')
+def scrape_category_page(category_url):
+    """爬取分類頁面內的所有商品"""
+    product_data = []
+    while category_url:
+        soup = get_soup(category_url)
+        if not soup:
+            break
 
-        # 提取下一頁鏈接的 href 屬性
-        nexthref = b.get_attribute('href')
+        # 找出商品的詳細頁面鏈接
+        product_links = set(a.get('href') for a in soup.select('div.product-name-container a'))
+        print(f"發現 {len(product_links)} 件商品")
 
-        # 啟動一個新的瀏覽器，進入下一頁鏈接
-        costoc2 = webdriver.Chrome()
-        costoc2.get(nexthref)
+        # 使用多執行緒爬取所有商品詳情
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            results = executor.map(scrape_product_page, product_links)
 
-        # 儲存圖片鏈接到 linklist2 中
-        linklist2.append(href2)
+        # 收集有效的商品數據
+        product_data.extend(filter(None, results))
 
-        # 關閉瀏覽器
-        costoc2.quit()
+        # 找下一頁的 URL
+        try:
+            next_page = soup.select('li.page-item a')[-1].get('href')
+            category_url = next_page if next_page else None
+        except (IndexError, AttributeError):
+            category_url = None  # 沒有下一頁則停止
 
-    # 關閉 costoc1 瀏覽器
-    costoc1.quit()
+    return product_data
 
-# 程式執行結束後，linklist2 會包含抓取到的所有圖片鏈接
+def save_to_db(products):
+    """將爬取到的商品資訊存入 SQLite 資料庫"""
+    for product in products:
+        cursor.execute('''
+            INSERT INTO product_table (name, price, img_url, link, classification,store)
+            VALUES (?, ?, ?, ?, ?,?)
+        ''', (product['name'], product['price'], product['img_url'], product['link'], product['classification'],product['store']))
+    conn.commit()
+    print(f"成功存入 {len(products)} 筆資料")
+
+
+if __name__ == '__main__':
+    category_links = get_category_links()[1:2]
+
+    if category_links:
+        all_products = []
+        for category_url in category_links:
+            print(f"正在爬取分類頁面: {category_url}")
+            products = scrape_category_page(category_url)
+            all_products.extend(products)
+
+        # 儲存數據到 SQLite
+        if all_products:
+            save_to_db(all_products)
+
+    # 關閉資料庫連接
+    conn.close()

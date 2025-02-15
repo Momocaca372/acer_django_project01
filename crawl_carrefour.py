@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import sqlite3
 import concurrent.futures
 import os
-import BIBIGOproject.Myproject.settings as settings
+import acer_django_project01.BIBIGOproject.Myproject.settings as settings
 
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 my_headers = {
@@ -19,13 +19,13 @@ cursor = conn.cursor()
 
 # 建立資料表（如果不存在）
 cursor.execute('''
-    CREATE TABLE IF NOT EXISTS product_talbe (
+    CREATE TABLE IF NOT EXISTS product_table (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
         price TEXT,
         img_url TEXT,
         link TEXT,
-        classification TEXT
+        classification TEXT,
         store TEXT
     )
 ''')
@@ -49,7 +49,6 @@ def get_category_links():
     if soup:
         return ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-item')]
     return []  # 修正：避免返回 None
-
 
 def scrape_product_page(product_url):
     """爬取單個商品頁面的詳細資訊"""
@@ -107,8 +106,8 @@ def save_to_db(products):
     """將爬取到的商品資訊存入 SQLite 資料庫"""
     for product in products:
         cursor.execute('''
-            INSERT INTO products (name, price, img_url, link, classification)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO product_table (name, price, img_url, link, classification,store)
+            VALUES (?, ?, ?, ?, ?,?)
         ''', (product['name'], product['price'], product['img_url'], product['link'], product['classification'],product['store']))
     conn.commit()
     print(f"成功存入 {len(products)} 筆資料")
