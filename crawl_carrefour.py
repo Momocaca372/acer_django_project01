@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import sqlite3
 import concurrent.futures
+import os
+import BIBIGOproject.Myproject.settings as settings
 
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 my_headers = {
@@ -12,7 +14,7 @@ my_headers = {
 url = 'https://online.carrefour.com.tw/zh/homepage/'
 
 # 連接 SQLite 資料庫
-db_filename = 'carrefour.db'
+db_filename = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
 conn = sqlite3.connect(db_filename)
 cursor = conn.cursor()
 
