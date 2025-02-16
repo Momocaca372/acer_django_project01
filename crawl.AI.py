@@ -1,9 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-import sqlite3
+import csv
 import concurrent.futures
-import os
-import BIBIGOproject.Myproject.settings as settings
 
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 my_headers = {
@@ -13,23 +11,8 @@ my_headers = {
 # 設定家樂福線上商城的首頁 URL
 url = 'https://online.carrefour.com.tw/zh/homepage/'
 
-# 連接 SQLite 資料庫
-conn = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
-cursor = conn.cursor()
-
-# 建立資料表（如果不存在）
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS product_table (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        price TEXT,
-        img_url TEXT,
-        link TEXT,
-        classification TEXT,
-        store TEXT
-    )
-''')
-conn.commit()
+# CSV 檔案名稱
+csv_filename = 'carrefour.csv'
 
 
 def get_soup(url):
@@ -48,7 +31,8 @@ def get_category_links():
     soup = get_soup(url)
     if soup:
         return ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-item')]
-    return []  # 修正：避免返回 None
+    return []
+
 
 def scrape_product_page(product_url):
     """爬取單個商品頁面的詳細資訊"""
@@ -60,15 +44,8 @@ def scrape_product_page(product_url):
         title = soup.select_one('div.title h1').text.strip()
         price = soup.find('span', class_='money').text.strip()
         img_url = 'https://online.carrefour.com.tw' + soup.select_one('div.preview-wrapper img').get('src')
-
-        # 抓取分類，如果找不到，則設定為 "未知分類"
-        try:
-            classification = soup.select('div.crumbs a')[3].text.split('/')[1].strip()
-        except (IndexError, AttributeError):
-            classification = "未知分類"
-
-        print(f'商品: {title}, 價格: {price}, 分類: {classification}')
-        return {'name': title, 'price': price, 'img_url': img_url, 'link': product_url, 'classification': classification,'store':'carrefour'}
+        print(title,price)
+        return {'name': title, 'money': price, 'img': img_url, 'link': product_url}
     except AttributeError:
         return None
 
@@ -83,12 +60,11 @@ def scrape_category_page(category_url):
 
         # 找出商品的詳細頁面鏈接
         product_links = ['https://online.carrefour.com.tw' + a.get('href') for a in soup.select('div.box-img a')]
-        print(f"發現 {len(product_links)} 件商品")
-
+        print(f"類別數: {len(product_links):d}")
         # 使用多執行緒爬取所有商品詳情
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             results = executor.map(scrape_product_page, product_links)
-
+        
         # 收集有效的商品數據
         product_data.extend(filter(None, results))
 
@@ -102,30 +78,27 @@ def scrape_category_page(category_url):
     return product_data
 
 
-def save_to_db(products):
-    """將爬取到的商品資訊存入 SQLite 資料庫"""
-    for product in products:
-        cursor.execute('''
-            INSERT INTO product_table (name, price, img_url, link, classification,store)
-            VALUES (?, ?, ?, ?, ?,?)
-        ''', (product['name'], product['price'], product['img_url'], product['link'], product['classification'],product['store']))
-    conn.commit()
-    print(f"成功存入 {len(products)} 筆資料")
+def main():
+    """主執行函式，負責控制爬取流程並將結果寫入 CSV"""
+    category_links = get_category_links()
+
+    # 開啟 CSV 檔案
+    with open(csv_filename, 'w', encoding='utf-8', newline='') as file:
+        fieldnames = ['name', 'money', 'img', 'link']
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        # 使用 ThreadPoolExecutor 並發抓取分類頁面
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            results = executor.map(scrape_category_page, category_links)
+        
+        # 寫入所有商品數據
+        for product_list in results:
+            for product in product_list:
+                writer.writerow(product)
+
+        print("爬取完成，數據已寫入", csv_filename)
 
 
 if __name__ == '__main__':
-    category_links = get_category_links()[1:2]
-
-    if category_links:
-        all_products = []
-        for category_url in category_links:
-            print(f"正在爬取分類頁面: {category_url}")
-            products = scrape_category_page(category_url)
-            all_products.extend(products)
-
-        # 儲存數據到 SQLite
-        if all_products:
-            save_to_db(all_products)
-
-    # 關閉資料庫連接
-    conn.close()
+    main()
