@@ -1,6 +1,6 @@
 import sqlite3
 import os
-import acer_django_project01.BIBIGOproject.Myproject.settings as settings
+import BIBIGOproject.Myproject.settings as settings
 
 # 連接 SQLite 資料庫
 conn = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
