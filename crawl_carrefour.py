@@ -14,22 +14,8 @@ my_headers = {
 url = 'https://online.carrefour.com.tw/zh/homepage/'
 
 # 連接 SQLite 資料庫
-conn = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
-cursor = conn.cursor()
-
-# 建立資料表（如果不存在）
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS product_table (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        price TEXT,
-        img_url TEXT,
-        link TEXT,
-        classification TEXT,
-        store TEXT
-    )
-''')
-conn.commit()
+def get_db_connection():
+    return sqlite3.connect(os.path.join(settings.BASE_DIR, 'db.sqlite3'))
 
 
 def get_soup(url):
@@ -68,7 +54,7 @@ def scrape_product_page(product_url):
             classification = "未知分類"
 
         print(f'商品: {title}, 價格: {price}, 分類: {classification}')
-        return {'name': title, 'price': price, 'img_url': img_url, 'link': product_url, 'classification': classification,'store':'carrefour'}
+        return {'name': title, 'price': price, 'img_url': img_url, 'product_url': product_url, 'classification': classification,'store':'carrefour'}
     except AttributeError:
         return None
 
@@ -104,16 +90,51 @@ def scrape_category_page(category_url):
 
 def save_to_db(products):
     """將爬取到的商品資訊存入 SQLite 資料庫"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 儲存店家資訊（如果店家不存在，則新增）
+    product_ids = []
     for product in products:
+        store_name = product['store']
+        cursor.execute('SELECT id FROM store WHERE name = ?', (store_name,))
+        store_id = cursor.fetchone()
+        if store_id is None:
+            cursor.execute('INSERT INTO store (name) VALUES (?)', (store_name,))
+            store_id = cursor.lastrowid
+        else:
+            store_id = store_id[0]
+
+    # 儲存商品類別
+        category_name = product['classification']
+        cursor.execute('SELECT id FROM category WHERE name = ? AND store_id = ?', (category_name, store_id))
+        category_id = cursor.fetchone()
+        if category_id is None:
+            cursor.execute('INSERT INTO category (store_id, name) VALUES (?, ?)', (store_id, category_name))
+            category_id = cursor.lastrowid
+        else:
+            category_id = category_id[0]
+
+    # 儲存商品
         cursor.execute('''
-            INSERT INTO product_table (name, price, img_url, link, classification,store)
-            VALUES (?, ?, ?, ?, ?,?)
-        ''', (product['name'], product['price'], product['img_url'], product['link'], product['classification'],product['store']))
+            INSERT INTO product (store_id, category_id) 
+            VALUES (?, ?)
+        ''', (store_id, category_id))
+        product_id = cursor.lastrowid
+        product_ids.append(product_id)
+
+    # 儲存商品詳細資訊
+        cursor.execute('''
+            INSERT INTO product_detail (product_id, name, price, image_url, product_url)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (product_id, product['name'], product['price'], product['img_url'], product['product_url']))
+
     conn.commit()
+    conn.close()
     print(f"成功存入 {len(products)} 筆資料")
 
-
 if __name__ == '__main__':
+
     category_links = get_category_links()[1:2]
 
     if category_links:
@@ -126,6 +147,3 @@ if __name__ == '__main__':
         # 儲存數據到 SQLite
         if all_products:
             save_to_db(all_products)
-
-    # 關閉資料庫連接
-    conn.close()
