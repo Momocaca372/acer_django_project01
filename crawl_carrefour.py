@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import sqlite3
 import concurrent.futures
 import os
-import acer_django_project01.BIBIGOproject.Myproject.settings as settings
+import BIBIGOproject.Myproject.settings as settings
 
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 my_headers = {
