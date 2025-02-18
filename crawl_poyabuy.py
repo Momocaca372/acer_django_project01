@@ -10,7 +10,7 @@ from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup as bs
 
 import BIBIGOproject.Myproject.settings as settings
-import databaseCreate
+
 from tqdm import tqdm 
 # 宣告參數
 url = "https://www.poyabuy.com.tw/v2/official/SalePageCategory/0?sortMode=Newest"
