@@ -94,13 +94,13 @@ def save_to_firebase(products):
             print(f"商品 {product_name} 已存在，跳過新增！")
             
 if __name__ == '__main__':
-    category_links = carrefour.get_category_links()[6:7]
+    category_links = crawl_carrefour.get_category_links()[6:7]
 
     if category_links:
         all_products = []
         for category_url in category_links:
             print(f"正在爬取分類頁面: {category_url}")
-            products = carrefour.scrape_category_page(category_url)
+            products = crawl_carrefour.scrape_category_page(category_url)
             all_products.extend(products)
             
         if all_products :
