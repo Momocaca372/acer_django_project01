@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import sqlite3
 import concurrent.futures
 import os
-import acer_django_project01.BIBIGOproject.Myproject.settings as settings
+import BIBIGOproject.Myproject.settings as settings
 
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 my_headers = {
@@ -49,12 +49,12 @@ def scrape_product_page(product_url):
 
         # 抓取分類，如果找不到，則設定為 "未知分類"
         try:
-            classification = soup.select('div.breadcrumb-section a')[3].text.strip()
+            category = soup.select('div.breadcrumb-section a')[3].text.strip()
         except (IndexError, AttributeError):
-            classification = "未知分類"
+            category = "未知分類"
 
-        print(f'商品: {title}, 價格: {price}, 分類: {classification}')
-        return {'name': title, 'price': price, 'img_url': img_url, 'product_url': product_url, 'classification': classification,'store':'costco'}
+        print(f'商品: {title}, 價格: {price}, 分類: {category}')
+        return {'name': title, 'price': price, 'img_url': img_url, 'product_url': product_url, 'classification': category,'store':'costco'}
     except AttributeError:
         return None
 
@@ -104,7 +104,7 @@ def save_to_db(products):
             store_id = store_id[0]
 
     # 儲存商品類別
-        category_name = product['classification']
+        category_name = product['category']
         cursor.execute('SELECT id FROM category WHERE name = ? AND store_id = ?', (category_name, store_id))
         category_id = cursor.fetchone()
         if category_id is None:
