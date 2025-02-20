@@ -10,12 +10,15 @@
 7.  人工客服(email收發)
 
 1.爬蟲整合入SQL結構 4個檔案
-Poyabuy - 方
-caffur - aaa
-costco - aaa
+Poyabuy - momo方
+增加Firebase_form modle - momo方2/20
+caffur - aaa吳 
+costco - aaa吳 
+修改為Firebase.py - aaa吳 2/18
 savesave - GGP
 2.網頁架構
-3 思考AI融入我們的專題--Jie
+3. 思考AI融入我們的專題--Jie
+4. 前端網頁設計--Jie 2/18
 
 
 # 首頁
