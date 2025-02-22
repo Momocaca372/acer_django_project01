@@ -92,8 +92,7 @@ def carrefour():
             page += 1
 
         return all_products
-
-
+    
     """抓取所有分類的商品，使用併發來加速"""
     category_urls = get_category_links()
     all_products = []
@@ -109,6 +108,7 @@ def carrefour():
 def costco():  
     # 設定好事多線上商城的首頁 URL
     url = 'https://www.costco.com.tw/'
+
     def get_soup(url):
         """發送 GET 請求並回傳 BeautifulSoup 解析後的內容"""
         try:
@@ -119,82 +119,77 @@ def costco():
             print(f"請求失敗: {url}, 錯誤: {e}")
         return None
 
-
     def get_category_links():
         """抓取所有商品分類的鏈接"""
         soup = get_soup(url)
         if soup:
-            link_list = [ a.get('href') for a in soup.select('ul#theMenu a.ng-star-inserted')]
-            link_list = list(filter(lambda x: x != 'javascript:void(0)', link_list))
-            return link_list
-        return []  # 修正：避免返回 None
-    def scrape_product_page(product_url):
-        """爬取單個商品頁面的詳細資訊"""
-        soup = get_soup(product_url)
-        if not soup:
-            return None
-
-        try:
-            title = soup.find('h1').text.strip()
-            price = soup.find('span', class_='notranslate ng-star-inserted').text.strip()[1:]
-            img_url = 'https://www.costco.com.tw' + soup.select_one('div.thumb img').get('src')
-
-            # 抓取分類，如果找不到，則設定為 "未知分類"
-            try:
-                category = soup.select('div.breadcrumb-section a')[3].text.strip()
-            except (IndexError, AttributeError):
-                category = "未知分類"
-
-            print(f'商品: {title}, 價格: {price}, 分類: {category}')
-            product_dict={'name': title,
-                          'price': price,
-                          'img_url': img_url,
-                          'product_url': product_url,
-                          'classification': category,
-                          'store':'costco',
-                          }
-            return product_dict
-        except AttributeError:
-            return None
+            link_list = [a.get('href') for a in soup.select('ul#theMenu a.ng-star-inserted')]
+            link_list = list(filter(lambda x: x != 'javascript:void(0)', link_list))  # 過濾掉無效鏈接
+            return link_list[25:-55]
+        return []  # 若請求失敗或無分類則返回空列表
 
     def scrape_category_page(category_url):
-        """爬取分類頁面內的所有商品"""
-        product_data = []
-        while category_url:
-            soup = get_soup(category_url)
+        """抓取某一分類頁面的所有商品"""
+        all_products = []
+        page = 0
+        while True:
+            paginated_url = category_url if page == 0 else f"{category_url}?page={page}"
+            print(paginated_url)
+            soup = get_soup(paginated_url)
             if not soup:
                 break
-
-            # 找出商品的詳細頁面鏈接
-            product_links = set(a.get('href') for a in soup.select('div.product-name-container a'))
-            print(f"發現 {len(product_links)} 件商品")
-
-            # 使用多執行緒爬取所有商品詳情
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                results = executor.map(scrape_product_page, product_links)
-
-            # 收集有效的商品數據
-            product_data.extend(filter(None, results))
-
-            # 找下一頁的 URL
+            
+            # 提取分類名稱
             try:
-                next_page = soup.select('li.page-item a')[-1].get('href')
-                category_url = next_page if next_page else None
+                category = soup.find('h1',class_='category-title').text.strip()
             except (IndexError, AttributeError):
-                category_url = None  # 沒有下一頁則停止
-
-        return product_data
-
-    def costco_all_product():
-        category_links = get_category_links()[1:2]
-
-        if category_links:
-            all_products = []
-            for category_url in category_links:
-                print(f"正在爬取分類頁面: {category_url}")
-                products = scrape_category_page(category_url)
-                all_products.extend(products)
+                category = "未知分類"    
+            
+            # 提取商品信息
+            products = soup.find_all('a',class_='lister-name js-lister-name')
+            prices = soup.select('div.product-price span.notranslate')
+            img_urls = soup.select('div.product-image img')
+            
+            for product, price, img_url in zip(products, prices, img_urls):
+                title = product.text
+                product_url = product.get('href').replace('https://www.costco.com.tw', '')
+                # try:
+                price = price.text.split('$')[1].strip()
+                # except IndexError:
+                #     price = "未知價格"
+                img_url = img_url.get('src').replace('https://www.costco.com.tw', '')
+            
+                all_products.append({
+                    'name': title,
+                    'price': price,
+                    'img_url': img_url,
+                    'product_url': product_url,
+                    'category': category,
+                    'store': 'costco'
+                })
+            
+                print(title, product_url, price, category)
                 
+                # 如果該頁面沒有更多商品則停止
+            if len(products) < 48:
+                break
+            
+            page += 1
+        return all_products
+
+
+    """抓取所有分類的商品，使用併發來加速"""
+    category_urls = get_category_links()
+    all_products = []
+
+    # 使用 ThreadPoolExecutor 來並行抓取各個分類頁面
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = executor.map(scrape_category_page, category_urls)
+        for result in results:
+            all_products.extend(result)
+
+    return all_products
+
 def savesafe():
     
 
