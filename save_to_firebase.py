@@ -1,110 +1,117 @@
-import pyrebase  # 用於連接 Firebase
-import crawl_carrefour  # Carrefour 爬蟲模組
-import crawl_costco  # Costco 爬蟲模組
+import pyrebase
+import crawl_controler
+import concurrent.futures
 
 def get_firebase_connection():
     """建立與 Firebase 的連線"""
     config = {
-        "apiKey": "AIzaSyAb1S6EP5v3np68_R6JQc6JPrlx6UHuEuE",
-        "authDomain": "djangofirebase-949f7.firebaseapp.com",
-        "databaseURL": "https://djangofirebase-949f7-default-rtdb.firebaseio.com",
-        "projectId": "djangofirebase-949f7",
-        "storageBucket": "djangofirebase-949f7.firebasestorage.app",
-        "messagingSenderId": "925644337298",
-        "appId": "1:925644337298:web:e2769661ba39282dbe364b",
+        "apiKey": "<your-api-key>",
+        "authDomain": "<your-auth-domain>",
+        "databaseURL": "<your-database-url>",
+        "projectId": "<your-project-id>",
+        "storageBucket": "<your-storage-bucket>",
+        "messagingSenderId": "<your-messaging-sender-id>",
+        "appId": "<your-app-id>",
     }
     firebase = pyrebase.initialize_app(config)  # 初始化 Firebase
     return firebase.database()  # 回傳資料庫物件
 
-def save_to_firebase(products):
-    """將爬取到的商品資訊存入 Firebase 資料庫"""
-    db = get_firebase_connection()  # 取得 Firebase 連線
+def fetch_existing_data(db):
+    """預先讀取 Firebase 內的 store、category 和 product，減少 API 請求次數"""
+    existing_data = {"store": {}, "category": {}, "product": {}}
+
+    # 讀取店家資料，建立字典 {店家名稱: 店家ID}
+    store_data = db.child("store").get().val() or {}
+    if isinstance(store_data, list):
+        store_data = {str(i): v for i, v in enumerate(store_data) if v}
+    existing_data["store"] = {v["name"]: k for k, v in store_data.items()}
+
+    # 讀取分類資料，建立字典 {分類名稱: 分類ID}
+    category_data = db.child("category").get().val() or {}
+    if isinstance(category_data, list):
+        category_data = {str(i): v for i, v in enumerate(category_data) if v}
+    existing_data["category"] = {v['name']: k for k, v in category_data.items()}
+
+    # 讀取商品資料，建立字典 {商品 URL: 商品ID}，避免重複新增
+    product_data = db.child("product_detail").get().val() or {}
+    if isinstance(product_data, list):
+        product_data = {str(i): v for i, v in enumerate(product_data) if v}
+    existing_data["product"] = {v["product_url"]: k for k, v in product_data.items()}
+
+    return existing_data
+
+def batch_save(db, products):
+    """批量寫入 Firebase，減少 API 請求次數"""
+    existing_data = fetch_existing_data(db)  # 預先讀取 Firebase 數據
+    store_map = existing_data["store"]
+    category_map = existing_data["category"]
+    product_map = existing_data["product"]
+
+    new_stores = {}
+    new_categories = {}
+    new_products = {}
+    new_product_details = {}
 
     for product in products:
-        store_name = product['store']  # 店家名稱
-        category_name = product['category']  # 商品分類
-        product_name = product['name']  # 商品名稱
-        price = product['price']  # 商品價格
-        img_url = product['img_url']  # 商品圖片連結
-        product_url = product['product_url']  # 商品頁面連結
+        store_name = product['store']
+        category_name = product['category']
+        product_name = product['name']
+        price = product['price']
+        img_url = product['img_url']
+        product_url = product['product_url']
 
         # === 儲存店家資訊 ===
-        store_data = db.child("store").get()
-        existing_stores = store_data.val() or {}  # 取得現有店家資料
+        store_id = store_map.get(store_name)
+        if store_id is None:
+            store_id = str(len(store_map) + 1)
+            store_map[store_name] = store_id
+            new_stores[store_id] = {"name": store_name}
 
-        if isinstance(existing_stores, list):
-            existing_stores = {str(i): v for i, v in enumerate(existing_stores) if v}
-
-        # 查找店家是否已存在
-        existing_store_id = next((sid for sid, store in existing_stores.items() if store.get("name") == store_name), None)
-
-        if existing_store_id is None:
-            store_id = str(max(map(int, existing_stores.keys()), default=0) + 1)
-            db.child("store").child(store_id).set({"name": store_name})  # 新增店家
-            print(f"新增店家: {store_name} (ID: {store_id})")
-        else:
-            store_id = existing_store_id  # 店家已存在，使用現有 ID
-
-        # === 儲存商品類別 ===
-        category_data = db.child("category").get()
-        existing_categories = category_data.val() or {}
-
-        if isinstance(existing_categories, list):
-            existing_categories = {str(i): v for i, v in enumerate(existing_categories) if v}
-
-        # 查找分類是否已存在
-        existing_category_id = next((cid for cid, category in existing_categories.items() if category.get("name") == category_name), None)
-
-        if existing_category_id is None:
-            category_id = str(max(map(int, existing_categories.keys()), default=0) + 1)
-            db.child("category").child(category_id).set({"name": category_name, "store_id": store_id})  # 新增分類
-        else:
-            category_id = existing_category_id  # 分類已存在，使用現有 ID
+        # === 儲存分類資訊 ===
+        category_id = category_map.get(category_name)
+        if category_id is None:
+            category_id = str(len(category_map) + 1)
+            category_map[category_name] = category_id
+            new_categories[category_id] = {"name": category_name, "store_id": store_id}
 
         # === 儲存商品資訊 ===
-        product_data = db.child("product").get()
-        existing_products = product_data.val() or {}
+        if product_url in product_map:
+            continue  # 商品已存在，跳過
 
-        if isinstance(existing_products, list):
-            existing_products = {str(i): v for i, v in enumerate(existing_products) if v}
+        product_id = str(len(product_map) + 1)
+        product_map[product_url] = product_id
+        new_products[product_id] = {"store_id": store_id, "category_id": category_id}
+        new_product_details[product_id] = {
+            "name": product_name,
+            "price": price,
+            "img_url": img_url,
+            "product_url": product_url,
+            "product_id": product_id,
+        }
 
-        # 檢查商品是否已存在
-        existing_product_id = next((pid for pid, prod in existing_products.items() if prod.get("name") == product_name), None)
+    # === 批量寫入 Firebase ===
+    if new_stores:
+        db.child("store").update(new_stores)
+    if new_categories:
+        db.child("category").update(new_categories)
+    if new_products:
+        db.child("product").update(new_products)
+    if new_product_details:
+        db.child("product_detail").update(new_product_details)
 
-        if existing_product_id is None:
-            product_id = str(max(map(int, existing_products.keys()), default=0) + 1)
-            db.child("product").child(product_id).set({"store_id": store_id, "category_id": category_id})  # 儲存基本資訊
-            db.child("product_detail").child(product_id).set({  # 儲存詳細資訊
-                "name": product_name,
-                "price": price,
-                "img_url": img_url,
-                "product_url": product_url,
-                "product_id": product_id,
-            })
-            print(f"新增商品: {product_name} (ID: {product_id})")
-        else:
-            print(f"商品 {product_name} 已存在，跳過新增！")
+    print(f"批量新增 {len(new_stores)} 個店家, {len(new_categories)} 個分類, {len(new_products)} 個商品.")
+
+def save_to_firebase(products):
+    """使用多執行緒加速寫入 Firebase"""
+    db = get_firebase_connection()
+
+    # 分批處理，每批 5000 筆，避免 API 請求過大
+    batch_size = 5000
+    product_batches = [products[i:i + batch_size] for i in range(0, len(products), batch_size)]
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(lambda batch: batch_save(db, batch), product_batches)
 
 if __name__ == '__main__':
-    # Carrefour & Costco 類別頁面爬取範圍
-    carrefour_category_links = crawl_carrefour.get_category_links()[6:7]
-    costco_category_links = crawl_costco.get_category_links()[1:2]
-    all_products = []  # 儲存所有爬取的商品
-    
-    # 爬取 Carrefour 資料
-    if carrefour_category_links:
-        for category_url in carrefour_category_links:
-            print(f"正在爬取分類頁面: {category_url}")
-            products = crawl_carrefour.scrape_category_page(category_url)  # 爬取該分類頁面
-            all_products.extend(products)
-    
-    # 爬取 Costco 資料
-    if costco_category_links:
-        for category_url in costco_category_links:
-            print(f"正在爬取分類頁面: {category_url}")
-            products = crawl_costco.scrape_category_page(category_url)  # 爬取該分類頁面
-            all_products.extend(products)
-    
-    # 儲存爬取的商品資訊到 Firebase
-    if all_products:
-        save_to_firebase(all_products)
+    all_products = crawl_controler.carrefour()  # 爬取 Carrefour 產品資料
+    save_to_firebase(all_products)
