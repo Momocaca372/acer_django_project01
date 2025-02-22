@@ -1,15 +1,15 @@
 import pyrebase
 
-
-config = {
-    "apiKey": "AIzaSyAb1S6EP5v3np68_R6jQc6JPrlx6UHuEuE",
-    "authDomain": "djangofirebase-949f7.firebaseapp.com",
-    "databaseURL": "https://djangofirebase-949f7-default-rtdb.firebaseio.com",
-    "projectId": "djangofirebase-949f7",
-    "storageBucket": "djangofirebase-949f7.firebasestorage.app",
-    "messagingSenderId": "925644337298",
-    "appId": "1:925644337298:web:e2769661ba39282dbe364b",
-}
-
-firebase = pyrebase.initialize_app(config)
-db = firebase.database()
+def get_firebase_connection():
+    """建立與 Firebase 的連線"""
+    config = {
+        "apiKey": "<your-api-key>",
+        "authDomain": "<your-auth-domain>",
+        "databaseURL": "<your-database-url>",
+        "projectId": "<your-project-id>",
+        "storageBucket": "<your-storage-bucket>",
+        "messagingSenderId": "<your-messaging-sender-id>",
+        "appId": "<your-app-id>",
+    }
+    firebase = pyrebase.initialize_app(config)  # 初始化 Firebase
+    return firebase.database()  # 回傳資料庫物件
