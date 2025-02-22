@@ -13,3 +13,11 @@ def get_firebase_connection():
     }
     firebase = pyrebase.initialize_app(config)  # 初始化 Firebase
     return firebase.database()  # 回傳資料庫物件
+
+def firebase_remove():
+    db = get_firebase_connection()
+
+    db.child('store').remove()
+    db.child('category').remove()
+    db.child('product').remove()
+    db.child('product_detail').remove()
