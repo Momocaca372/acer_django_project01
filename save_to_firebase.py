@@ -1,38 +1,39 @@
 import pyrebase
 import crawl_controler
-import concurrent.futures
+
+"""爬取的商品資料，存成[{}]的格式，可以直接寫入Firebase"""
 
 def get_firebase_connection():
     """建立與 Firebase 的連線"""
     config = {
-        "apiKey": "<your-api-key>",
-        "authDomain": "<your-auth-domain>",
-        "databaseURL": "<your-database-url>",
-        "projectId": "<your-project-id>",
-        "storageBucket": "<your-storage-bucket>",
-        "messagingSenderId": "<your-messaging-sender-id>",
-        "appId": "<your-app-id>",
+        "apiKey": "AIzaSyAb1S6EP5v3np68_R6JQc6JPrlx6UHuEuE",
+        "authDomain": "djangofirebase-949f7.firebaseapp.com",
+        "databaseURL": "https://djangofirebase-949f7-default-rtdb.firebaseio.com",
+        "projectId": "djangofirebase-949f7",
+        "storageBucket": "djangofirebase-949f7.firebasestorage.app",
+        "messagingSenderId": "925644337298",
+        "appId": "1:925644337298:web:e2769661ba39282dbe364b",
     }
     firebase = pyrebase.initialize_app(config)  # 初始化 Firebase
     return firebase.database()  # 回傳資料庫物件
 
 def fetch_existing_data(db):
-    """預先讀取 Firebase 內的 store、category 和 product，減少 API 請求次數"""
+    """預先讀取 Firebase 內的所有 store、category 和 product，減少 API 請求次數"""
     existing_data = {"store": {}, "category": {}, "product": {}}
 
-    # 讀取店家資料，建立字典 {店家名稱: 店家ID}
+    # 讀取店家資料
     store_data = db.child("store").get().val() or {}
     if isinstance(store_data, list):
         store_data = {str(i): v for i, v in enumerate(store_data) if v}
     existing_data["store"] = {v["name"]: k for k, v in store_data.items()}
 
-    # 讀取分類資料，建立字典 {分類名稱: 分類ID}
+    # 讀取分類資料
     category_data = db.child("category").get().val() or {}
     if isinstance(category_data, list):
         category_data = {str(i): v for i, v in enumerate(category_data) if v}
     existing_data["category"] = {v['name']: k for k, v in category_data.items()}
 
-    # 讀取商品資料，建立字典 {商品 URL: 商品ID}，避免重複新增
+    # 讀取商品資料
     product_data = db.child("product_detail").get().val() or {}
     if isinstance(product_data, list):
         product_data = {str(i): v for i, v in enumerate(product_data) if v}
@@ -40,8 +41,9 @@ def fetch_existing_data(db):
 
     return existing_data
 
-def batch_save(db, products):
-    """批量寫入 Firebase，減少 API 請求次數"""
+def save_to_firebase(products):
+    """在本機比對是否有重複，再寫入Firebase"""
+    db = get_firebase_connection()
     existing_data = fetch_existing_data(db)  # 預先讀取 Firebase 數據
     store_map = existing_data["store"]
     category_map = existing_data["category"]
@@ -89,7 +91,7 @@ def batch_save(db, products):
             "product_id": product_id,
         }
 
-    # === 批量寫入 Firebase ===
+    # === 寫入 Firebase ===
     if new_stores:
         db.child("store").update(new_stores)
     if new_categories:
@@ -99,19 +101,9 @@ def batch_save(db, products):
     if new_product_details:
         db.child("product_detail").update(new_product_details)
 
-    print(f"批量新增 {len(new_stores)} 個店家, {len(new_categories)} 個分類, {len(new_products)} 個商品.")
-
-def save_to_firebase(products):
-    """使用多執行緒加速寫入 Firebase"""
-    db = get_firebase_connection()
-
-    # 分批處理，每批 5000 筆，避免 API 請求過大
-    batch_size = 5000
-    product_batches = [products[i:i + batch_size] for i in range(0, len(products), batch_size)]
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        executor.map(lambda batch: batch_save(db, batch), product_batches)
+    print(f"新增 {len(new_stores)} 個店家, {len(new_categories)} 個分類, {len(new_products)} 個商品.")
+    
 
 if __name__ == '__main__':
-    all_products = crawl_controler.carrefour()  # 爬取 Carrefour 產品資料
+    all_products = crawl_controler.carrefour 
     save_to_firebase(all_products)
