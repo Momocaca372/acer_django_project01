@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'product.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="product-container">
+    <section class="product-row">
+        <!-- 搜索區，位於導航列下面 -->
+        <div class="product-search-container">
+            <div class="product-search-bar">
+                <input type="text" class="product-form-control" placeholder="搜尋商品" aria-label="搜尋商品">
+                <button class="product-btn" aria-label="搜尋">
+                    <img src="{% static '放大鏡.png' %}" alt="搜尋圖示" width="20" height="20">
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="product-content-container">
+        <div class="product-row">
+            <aside class="product-sidebar">
+                <h1>商品分類</h1>
+                <ul class="product-list-unstyled">
+                    {% for category in categories %}
+                        <li class="product-category">
+                            {{ category.name }}
+                            <ul class="product-sub-list">
+                                {% for sub_category in category.sub_categories.all %}
+                                    <li>{{ sub_category.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </aside>
+
+            <main class="product-content">
+                <div class="product-image-container">
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-img">
+                    <div class="product-details">
+                        <h2>{{ product.name }}</h2>
+                        <p class="product-price">$ {{ product.price }}</p>
+                    
+                    
+                        <div class="price-comparison">
+                            {% for store in product.stores.all %}
+                                <span>{{ store.name }}: NT$ {{ store.price }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="follow-btn-container">
+                        <button class="follow-btn">關注商品</button>
+                    </div>
+                </div>
+
+                {% comment %} <div class="product-info">
+                    <h2>{{ product.name }}</h2>
+                    <p>價格：NT$ {{ product.price }}</p> {% endcomment %}
+
+                {% comment %} </div> {% endcomment %}
+            </main>
+
+            <aside class="related-products">
+                <h3>搜尋的其他物品</h3>
+                <div class="product-list">
+                    {% for related in related_products %}
+                        <div class="product-item">
+                            <a href="{% url 'product' related.id %}" class="product-link">
+                                <img src="{{ related.image_url }}" alt="{{ related.name }}">
+                                <div class="product-info">
+                                    <span class="product-name">{{ related.name }}</span>
+                                    <span class="product-price">$ {{ related.price }}</span>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </aside>
+        </div>    
+    </section>
+
+    <section class="store-pricing">
+        <h3>店家價格</h3>
+        <div class="store-list">
+            {% for store in product.stores.all %}
+                <div class="store-item">
+                    <span class="rank">{{ forloop.counter }}</span>
+                    <img src="{{ store.logo_url }}" alt="{{ store.name }} LOGO" class="store-logo">
+                    <span class="product-name">{{ product.name }}</span>
+                    <span class="product-price">NT$ {{ store.price }}</span>
+                    <button class="buy-btn">購買</button>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <script>
+        // 展開商品分類的子列表
+        document.addEventListener('DOMContentLoaded', function () {
+            const categories = document.querySelectorAll('.product-category');
+            categories.forEach(function (category) {
+                category.addEventListener('click', function () {
+                    category.classList.toggle('active');
+                    const subList = category.querySelector('.product-sub-list');
+                    if (subList) {
+                        subList.style.display = subList.style.display === 'block' ? 'none' : 'block';
+                    }
+                });
+            });
+        });        
+    </script>
+</div>
+{% endblock %}

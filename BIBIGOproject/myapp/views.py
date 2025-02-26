@@ -162,3 +162,25 @@ def crudops(request):
     dreamreal.save()
 
     return HttpResponse(res)
+
+def home(request):
+    return render(request, 'base.html')
+
+def subpage(request):
+    return render(request, 'subpage.html')
+
+def search(request):
+    query = request.GET.get('q', '')  # 從請求中獲取搜索字串
+    products = ProductDetail.objects.filter(name__icontains=query)  # 使用不區分大小寫的模糊查詢
+    return render(request, 'search.html', {'products': products, 'query': query})
+
+def product(request, product_id):
+    product = get_object_or_404(ProductDetail, id=product_id)
+    categories = Category.objects.all()  # 獲取所有分類
+    related_products = ProductDetail.objects.filter(product__category=product.product.category).exclude(id=product.id)[:5]
+
+    return render(request, 'product.html', {
+        'product': product,
+        'categories': categories,
+        'related_products': related_products,
+    })
