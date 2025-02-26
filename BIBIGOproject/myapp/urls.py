@@ -15,4 +15,8 @@ urlpatterns =[
     path('search/', views.search, name='search'),
     path('product/<int:product_id>/', views.product, name='product'),
     re_path(r'^dreamreal/', views.dreamreal, name='dreamreal'),
+    path('home/', views.home, name='home'),
+    path('subpage/', views.subpage, name='subpage'),
+    path('search/', views.search, name='search'),
+    path('product/<int:product_id>/', views.product, name='product'),
     ]

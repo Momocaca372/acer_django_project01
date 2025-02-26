@@ -1,7 +1,7 @@
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 import re, json
-from myapp.models import Dreamreal, Login
+from myapp.models import Dreamreal, Login, ProductDetail, Product, Category
 from myapp.forms import LoginForm, DreamrealForm
 import datetime
 from django.core.cache import cache
