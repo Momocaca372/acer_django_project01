@@ -26,5 +26,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("myapp/", include('myapp.urls')),
     path("",RedirectView.as_view(url='/myapp/LoginPage')), #空位址重新導向myapp
+
     
 ]+static(settings.STATIC_URL,document_root = settings.STATIC_ROOT)

@@ -1,0 +1,245 @@
+container/* 設定整體容器樣式 */
+.subpage-container {
+    max-width: 1900px; /* 限制最大寬度，避免內容在超大螢幕上過度延展 */
+    width: 100%; /* 頁面寬度為螢幕的 90% */
+    margin: 0 auto; /* 讓容器水平置中 */
+}
+
+.subpage-content-container {
+    width: 100%; /* 讓容器填滿可用空間 */
+    max-width: 1900px; /* 可根據需求設置最大寬度 */
+    min-width: 960px; /* 設置最小寬度 */
+    margin: 0 auto; /* 使容器居中 */
+}
+
+/* 設定主要區塊的排列方式 */
+.subpage-row {
+    display: flex; /* 使用 Flexbox 進行排列 */
+    flex-wrap: wrap; /* 允許內容換行 */
+    justify-content: center; /* 讓子元素水平置中 */
+    width: 100%; /* 讓區塊填滿整個可用空間 */
+    margin-top: 10px; /* 設定上邊距為 20px */
+}
+
+/* 商品分類側邊欄 */
+.subpage-sidebar {
+    flex: 1 1 200px; /* 最小寬度 200px，並允許調整 */
+    max-width: 20%; /* 最大寬度為 20% */
+    padding: 20px; /* 設定內邊距 */
+    background-color: transparent; /* 完全透明背景 */
+    font-size: 20px; /* 設定字體大小為 16px */
+}
+
+/* 去除父分類的圓點 */
+.subpage-list-unstyled {
+    list-style-type: none; /* 不顯示圓點 */
+    padding-left: 0; /* 移除內邊距 */
+    margin-top: 5px; /* 設定上邊距為 20px */
+}
+
+/* 去除子分類的圓點 */
+.subpage-sub-list {
+    list-style-type: none; /* 不顯示圓點 */
+    padding-left: 20px; /* 可以根據需要設置縮進 */
+}
+
+/* 主內容區域 */
+.subpage-content {
+    flex: 2 1 600px; /* 主要內容區域較大，最小寬度 600px */
+    max-width: 100%; /* 最大寬度為 60% */
+    padding: 20px; /* 設定內邊距 */
+    font-size: 20px; /* 設定字體大小為 16px */
+}
+
+/* AI 客服區塊 */
+.subpage-ai-service {
+    font-size: 20px; /* 設定字體大小為 16px */
+    flex: 1 1 200px; /* 最小寬度 200px，並允許調整 */
+    max-width: 20%; /* 最大寬度為 20% */
+    padding: 20px; /* 設定內邊距 */
+    background-color: transparent; /* 完全透明背景 */
+    color: rgb(0, 0, 0); /* 設定文字顏色為白色 */
+}
+
+.subpage-search-container {
+    width: 100%; /* 確保父容器擴展滿螢幕 */
+}
+
+/* 搜索框區域 */
+.subpage-search-bar {
+    display: flex; /* 使用 Flexbox 進行排列 */
+    width: 100%; /* 讓區塊填滿父容器 */
+    max-width: 800px; /* 限制最大寬度 */
+    margin-left: 400px; /* 向左移動 20px */
+    gap: 0px; /* 設定輸入框和按鈕之間的間距 */
+    justify-content: space-between; /* 讓輸入框和按鈕保持間距 */
+    align-items: center; /* 垂直置中 */
+}
+
+/* 搜索框內的輸入框 */
+.subpage-search-bar input {
+    font-size: 15px; /* 設定字體大小為 16px */
+    width: auto; /* 讓輸入框根據內容調整寬度 */
+    min-width: 500px; /* 設定最小寬度 */
+    max-width: 100%; /* 確保不會超過父容器 */
+    flex-grow: 1; /* 讓輸入框可自動擴展 */
+    padding: 10px; /* 設定內邊距 */
+    border-radius: 5px; /* 設定圓角 */
+    border: 1px solid #ccc; /* 設定邊框顏色 */
+}
+
+/* 搜索按鈕 */
+.subpage-search-bar button {
+    padding: 7px 10px; /* 增大內邊距，設定按鈕的上下和左右內邊距 */
+    background-color: #007bff; /* 設定背景顏色為藍色 */
+    border: none; /* 移除邊框 */
+    border-radius: 5px; /* 設定圓角 */
+    color: white; /* 設定文字顏色為白色 */
+    cursor: pointer; /* 讓鼠標變成指標，表示可點擊 */
+    font-size: 16px; /* 設定字體大小，增加按鈕文字的可見性 */
+    width: auto; /* 讓按鈕寬度根據內容自動調整 */
+    position: relative; /* 相對定位 */
+    top: 2px; /* 讓按鈕向下移動 10px */
+    left: -4px;
+}
+
+/* 熱門搜尋標籤 */
+.subpage-search-tag {
+    display: flex; /* 使用 Flexbox 進行排列 */
+    align-items: center; /* 讓標籤與文字垂直置中 */
+    margin-bottom: 20px; /* 設定與下方內容的間距 */
+    margin-top: 10px; /* 設定上邊距為 20px */
+    margin-left: 400px; /* 向左移動 20px */
+}
+
+/* 熱門搜尋標籤標題 */
+.subpage-search-label {
+    background-color: #dc3545; /* 設定紅色背景 */
+    color: white; /* 設定文字顏色為白色 */
+    padding: 8px 15px; /* 設定內邊距 */
+    border-radius: 5px; /* 設定圓角 */
+}
+
+/* 熱門搜尋標籤的內容 */
+.subpage-tags {
+    display: flex; /* 使用 Flexbox 進行排列 */
+    flex-wrap: wrap; /* 允許換行 */
+    gap: 10px; /* 設定標籤之間的間距 */
+    margin-left: 20px; /* 設定左邊距 */
+}
+
+/* 單個標籤 */
+.subpage-tag {
+    padding: 5px 10px; /* 設定內邊距 */
+    border: 1px solid #ccc; /* 設定邊框顏色 */
+    border-radius: 20px; /* 設定圓角 */
+    text-decoration: none; /* 去除超連結的底線 */
+    color: #333; /* 設定文字顏色 */
+}
+
+/* 當鼠標懸停時的標籤效果 */
+.subpage-tag:hover {
+    background-color: #007bff; /* 背景顏色變為藍色 */
+    color: white; /* 文字顏色變為白色 */
+}
+
+/* 商品分類區塊 */
+.subpage-category {
+    cursor: pointer; /* 讓鼠標變為指標，表示可點擊 */
+    margin-bottom: 10px; /* 設定底部間距 */
+}
+
+/* 商品分類的子列表（預設隱藏） */
+.subpage-sub-list {
+    display: none; /* 初始時不顯示 */
+    margin-left: 20px; /* 設定左邊距 */
+}
+
+/* 當分類展開時，顯示子列表 */
+.subpage-category.active .subpage-sub-list {
+    display: block;
+}
+
+/* 當鼠標懸停在分類時，改變背景顏色 */
+.subpage-category:hover {
+    background-color: #f8f9fa;
+}
+
+.subpage-products {
+    padding: 20px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));  /* 每列最小200px，最大填滿空間 */
+    gap: 15px;  /* 商品之間的間隔 */
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.subpage-product-item {
+    background-color: #f9f9f9; /* 商品項目的背景顏色 */
+    border: 1px solid #ddd;  /* 商品項目邊框 */
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px; /* 圓角 */
+}
+
+.subpage-product-item a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.product-image {
+    width: 100%; /* 讓圖片寬度填滿父容器 */
+    max-width: 200px; /* 設定最大寬度 */
+    height: auto; /* 保持圖片比例 */
+    border-radius: 8px; /* 圓角效果 */
+}
+
+.subpage-products ul {
+    list-style: none; /* 移除列表前的點 */
+    padding: 0; /* 移除內邊距，讓列表對齊 */
+    margin: 0; /* 移除外邊距 */
+}
+
+.product-name {
+    width: 100%; /* 讓名稱與圖片同寬 */
+    max-width: 200px; /* 確保與圖片 max-width 相同 */
+    display: -webkit-box; /* 讓文字能夠限制行數 */
+    -webkit-box-orient: vertical; /* 設定文字垂直排列 */
+    -webkit-line-clamp: 2; /* 限制最多顯示 2 行 */
+    overflow: hidden; /* 隱藏超出的部分 */
+    text-overflow: ellipsis; /* 省略號顯示超出的文字 */
+    word-wrap: break-word; /* 讓長單字能夠自動換行 */
+    line-height: 1.4; /* 設定行高，讓兩行文字有適當間距 */
+}
+
+/* AI 客服區塊內的 iframe 設定 */
+.subpage-ai-service iframe {
+    width: 100%; /* 讓 iframe 填滿父容器 */
+    height: 400px; /* 設定高度 */
+    border-radius: 10px; /* 設定圓角 */
+    border: none; /* 移除邊框 */
+}
+
+/* 響應式設計（適用於平板與手機） */
+@media (max-width: 992px) {
+    /* 當螢幕寬度小於 992px 時，三個區塊改為上下排列 */
+    .subpage-sidebar, .subpage-content, .subpage-ai-service {
+        max-width: 100%; /* 讓區塊填滿整個可用寬度 */
+        flex: 1 1 100%; /* 讓區塊占滿整列 */
+    }
+
+    /* 搜索框在小螢幕時改為垂直排列 */
+    .subpage-search-bar {
+        flex-direction: column;
+        width: 90%;
+    }
+
+    /* 搜索輸入框與按鈕間的間距 */
+    .subpage-search-bar input {
+        margin-bottom: 10px;
+    }
+}
