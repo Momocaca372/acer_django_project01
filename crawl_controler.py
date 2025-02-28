@@ -25,10 +25,14 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--enable-unsafe-swiftshader")
+# 自定義的 SSL Adapter，降低安全等級以允許較小的 DH 金鑰
 class SSLAdapter(HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=False):
+        # 創建一個默認的 SSL 上下文
         ctx = ssl.create_default_context()
+        # 設置加密套件的安全等級為 1，允許較小的 DH 金鑰
         ctx.set_ciphers('DEFAULT:@SECLEVEL=1')
+        # 初始化連線池管理器，並指定使用自定義的 SSL 上下文
         self.poolmanager = PoolManager(
             num_pools=connections, maxsize=maxsize, block=block, ssl_context=ctx
         )
@@ -202,98 +206,102 @@ def costco():
 def saveself(driver_path=None):
     """
     使用 Selenium 獲取導航列中的所有鏈接並抓取商品資料
-    :param driver_path: 若需要指定 ChromeDriver 路徑，則提供此參數
-    :return: 返回抓取到的所有商品資料列表
+    :param driver_path: 若需要指定 ChromeDriver 路徑，則提供此參數，預設為 None，會自動尋找
+    :return: 返回抓取到的所有商品資料列表，包含商品名稱、價格、圖片和商品連結等資訊
     """
     base_url = 'https://www.savesafe.com.tw/'  # 設定默認網站的 URL
-    titlelist = []
+    titlelist = []  # 用於存儲從導航列中抓取的所有分類頁面鏈接
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # 無頭模式，避免彈出瀏覽器視窗
-    driver_service = Service(driver_path) if driver_path else Service()
-    driver = webdriver.Chrome(service=driver_service, options=options)
-    
+    options.add_argument('--headless')  # 無頭模式，避免彈出瀏覽器視窗，適合於自動化抓取
+    driver_service = Service(driver_path) if driver_path else Service()  # 判斷是否有傳入 driver 路徑
+    driver = webdriver.Chrome(service=driver_service, options=options)  # 使用 WebDriver 打開瀏覽器
+
     # 使用自定義 SSLAdapter 的 requests Session
-    session = requests.Session()
-    session.mount('https://', SSLAdapter())
+    session = requests.Session()  # 創建一個新的 session 用於發送 HTTP 請求
+    session.mount('https://', SSLAdapter())  # 設置自定義的 SSLAdapter 來處理 HTTPS 請求
     
+    # 定義 headers 來模擬瀏覽器行為，防止被網站識別為機器人
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/133.0.0.0 Safari/537.36"
     }
-    
-    try:
-        # 獲取導航列中的所有鏈接
-        driver.get(base_url)
-        time.sleep(3)  # 等待頁面加載
-        titles = driver.find_elements(By.CSS_SELECTOR, 'ul.ThirdNavItemList li a')
-        for title in titles:
-            href = title.get_attribute('href')
-            if href:
-                titlelist.append(href)
-    finally:
-        driver.quit()
 
-    # 遍歷所有導航鏈接，抓取各分類的商品資料
-    all_products = []
+    try:
+        # 使用 Selenium 獲取網站首頁並抓取導航列中的所有鏈接
+        driver.get(base_url)
+        time.sleep(3)  # 等待頁面完全加載，確保導航列的鏈接已經渲染完成
+        titles = driver.find_elements(By.CSS_SELECTOR, 'ul.ThirdNavItemList li a')  # 找到導航列中的所有鏈接
+        for title in titles:
+            href = title.get_attribute('href')  # 獲取每個鏈接的 href 屬性
+            if href:
+                titlelist.append(href)  # 如果 href 存在，將其加入 titlelist
+    finally:
+        driver.quit()  # 無論成功與否，結束後關閉 WebDriver，釋放資源
+
+    # 遍歷所有導航頁面鏈接，抓取每個分類頁中的商品資料
+    all_products = []  # 用於存儲所有商品資料的列表
     for nav_url in titlelist:
-        print(f"開始抓取分類頁面：{nav_url}")
+        print(f"開始抓取分類頁面：{nav_url}")  # 輸出目前正在抓取的分類頁面 URL
         url = nav_url
         while url:
             try:
+                # 發送 GET 請求來抓取頁面的內容，並設置 headers 來模擬真實瀏覽器行為
                 response = session.get(url, headers=headers)
-                response.raise_for_status()  # 若狀態碼非 200，則拋出異常
-                soup = BeautifulSoup(response.text, "html.parser")
+                response.raise_for_status()  # 如果狀態碼不是 200，則引發異常
+                soup = BeautifulSoup(response.text, "html.parser")  # 用 BeautifulSoup 解析 HTML 內容
                 
-                # 抓取麵包屑中的分類名稱
-                breadcrumb_links = soup.select('li.breadcrumb-item a')
-                category = breadcrumb_links[-1].get_text(strip=True) if breadcrumb_links else '未知分類'
+                # 從麵包屑導航中獲取分類名稱
+                breadcrumb_links = soup.select('li.breadcrumb-item a')  # 解析麵包屑導航中的所有分類
+                category = breadcrumb_links[-1].get_text(strip=True) if breadcrumb_links else '未知分類'  # 取得最後一個分類作為當前頁面的分類名稱
                 
-                # 抓取所有商品區塊
+                # 找到所有商品區塊
                 product_cards = soup.select('div.NewActivityItem')
                 for card in product_cards:
-                    # 取得商品連結與圖片連結
-                    link_tag = card.select_one('a.text-center')
+                    # 取得商品的連結與圖片連結
+                    link_tag = card.select_one('a.text-center')  # 找到每個商品的連結
                     if link_tag:
-                        product_url = link_tag.get('href')
+                        product_url = link_tag.get('href')  # 獲取商品的詳細頁面 URL
                         
-                        # 確保圖片連結存在
-                        img_tag = link_tag.find('img', class_='card-img-top')
-                        image_url = img_tag['src'] if img_tag and img_tag.has_attr('src') else ''
+                        # 確保圖片連結存在並獲取圖片 URL
+                        img_tag = link_tag.find('img', class_='card-img-top')  # 尋找商品圖片
+                        image_url = img_tag['src'] if img_tag and img_tag.has_attr('src') else ''  # 如果有圖片，則取其 src 屬性
                     else:
                         product_url = ''
                         image_url = ''
                     
                     # 取得商品名稱
-                    name_tag = card.select_one('p.ObjectName')
-                    name = name_tag.get_text(strip=True) if name_tag else ''
+                    name_tag = card.select_one('p.ObjectName')  # 找到商品名稱的標籤
+                    name = name_tag.get_text(strip=True) if name_tag else ''  # 提取商品名稱文本
                     
                     # 取得商品價格
-                    price_tag = card.select_one('span.Price')
-                    price = price_tag.get_text(strip=True) if price_tag else ''
+                    price_tag = card.select_one('span.Price')  # 找到商品價格的標籤
+                    price = price_tag.get_text(strip=True) if price_tag else ''  # 提取商品價格文本
                     
-                    # 將商品資訊加入列表
+                    # 將抓取的商品資訊添加到 all_products 列表中
                     all_products.append({
-                        'name': name,
-                        'price': price,
-                        'img_url': image_url,
-                        'product_url': product_url if product_url else '',
-                        'category': category,
-                        'store': 'savesafe'
+                        'name': name,  # 商品名稱
+                        'price': price,  # 商品價格
+                        'img_url': image_url,  # 商品圖片的 URL
+                        'product_url': product_url if product_url else '',  # 商品詳細頁面的 URL
+                        'category': category,  # 商品所屬分類
+                        'store': 'savesafe'  # 店鋪名稱（固定為 'savesafe'）
                     })
-                    print(name, product_url, price, category, image_url)
+                    print(name, product_url, price, category, image_url)  # 輸出商品的基本資訊
                 
-                # 檢查是否存在下一頁的連結
-                next_page_tag = soup.select_one('a.page-link[aria-label="Next"]')
-                if next_page_tag and 'href' in next_page_tag.attrs:
-                    url = base_url + next_page_tag['href']
+                # 檢查是否有下一頁的連結
+                next_page_tag = soup.select_one('a.page-link[aria-label="Next"]')  # 查找 "下一頁" 按鈕
+                if next_page_tag and 'href' in next_page_tag.attrs:  # 如果下一頁按鈕存在，則獲取下一頁的鏈接
+                    url = base_url + next_page_tag['href']  # 組合出完整的 URL
                 else:
-                    break  # 沒有下一頁時跳出循環
-            except requests.exceptions.RequestException as e:
-                print(f"請求錯誤（{url}）：{e}")
-                break
+                    break  # 如果沒有下一頁，則跳出循環，停止抓取
+
+            except requests.exceptions.RequestException as e:  # 捕捉任何 HTTP 請求錯誤
+                print(f"請求錯誤（{url}）：{e}")  # 輸出錯誤訊息
+                break  # 出現錯誤後跳出循環
     
-    return all_products
+    return all_products  # 返回所有抓取的商品資料，形式為列表字典
+
 
 def poyabuy():
     # 宣告參數
