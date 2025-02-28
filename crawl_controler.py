@@ -7,10 +7,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.common.keys import Keys
-
+import ssl
+from urllib3.poolmanager import PoolManager
+from requests.adapters import HTTPAdapter
 from time import sleep
+import time
 from tqdm import tqdm
-
+from selenium.webdriver.chrome.service import Service
 import re
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 my_headers = {
@@ -22,7 +25,13 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--enable-unsafe-swiftshader")
-
+class SSLAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers('DEFAULT:@SECLEVEL=1')
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize, block=block, ssl_context=ctx
+        )
 
 def carrefour():
     # 家樂福的首頁 URL
@@ -190,114 +199,101 @@ def costco():
 
     return all_products
 
-def savesafe():
+def saveself(driver_path=None):
+    """
+    使用 Selenium 獲取導航列中的所有鏈接並抓取商品資料
+    :param driver_path: 若需要指定 ChromeDriver 路徑，則提供此參數
+    :return: 返回抓取到的所有商品資料列表
+    """
+    base_url = 'https://www.savesafe.com.tw/'  # 設定默認網站的 URL
+    titlelist = []
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')  # 無頭模式，避免彈出瀏覽器視窗
+    driver_service = Service(driver_path) if driver_path else Service()
+    driver = webdriver.Chrome(service=driver_service, options=options)
     
+    # 使用自定義 SSLAdapter 的 requests Session
+    session = requests.Session()
+    session.mount('https://', SSLAdapter())
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/133.0.0.0 Safari/537.36"
+    }
+    
+    try:
+        # 獲取導航列中的所有鏈接
+        driver.get(base_url)
+        time.sleep(3)  # 等待頁面加載
+        titles = driver.find_elements(By.CSS_SELECTOR, 'ul.ThirdNavItemList li a')
+        for title in titles:
+            href = title.get_attribute('href')
+            if href:
+                titlelist.append(href)
+    finally:
+        driver.quit()
 
-    # === 爬取商品詳細資訊 ===
-    def get_product_details(driver, product_url):
-        """
-        從指定的商品頁面抓取商品詳細資訊，包括標題、價格、圖片及分類，
-        然後將這些資訊存入資料庫。
-
-        :param driver: Selenium 的 WebDriver 物件，用來操作瀏覽器
-        :param url: 商品的詳細頁面網址
-        """
-        driver.get(product_url)
-        try:
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h4.h2-responsive.product-name')))
-
-            # ✅ 抓取標題
+    # 遍歷所有導航鏈接，抓取各分類的商品資料
+    all_products = []
+    for nav_url in titlelist:
+        print(f"開始抓取分類頁面：{nav_url}")
+        url = nav_url
+        while url:
             try:
-                title_element = driver.find_element(By.CSS_SELECTOR, 'h4.h2-responsive.product-name')
-                title = title_element.text.strip()
-                title = re.sub(r'\s*<span>.*?</span>\s*', '', title)  # 移除 <span> 內的內容
-            except:
-                title = None
-
-            # ✅ 抓取價格
-            try:
-                price_element = driver.find_element(By.CSS_SELECTOR, 'span.SalePrice.text-danger')
-                price = re.sub(r"[^\d.]", "", price_element.text.strip())  # 移除非數字字元
-            except:
-                price = None
-
-            # ✅ 抓取主圖片
-            try:
-                main_img = driver.find_element(By.CSS_SELECTOR, 'div.clearfix a#cgo img#mainImg')
-                img_url = main_img.get_attribute("src")
-            except:
-                img_url = None
-
-            # ✅ 抓取分類 (麵包屑)
-            try:
-                breadcrumb = driver.find_element(By.CSS_SELECTOR, 'li.breadcrumb-item.active')
-                category = breadcrumb.text.strip()
-            except:
-                category = "未分類"
-
-
-
-            product_dict={'name': title,
-                          'price': price,
-                          'img_url': img_url,
-                          'product_url': product_url,
-                          'classification': category,
-                          'store':'SaveSafe',
-                          }         
-        except Exception as e:
-            print(f" 獲取 {product_url} 詳情時發生錯誤: {e}")
-        return product_dict
-    # === 訪問分類頁面 ===
-    def visit_link(url):
-        """
-        訪問一個分類頁面，並抓取頁面上的所有產品鏈接，然後逐一進入每個商品頁面進行資料爬取。
-
-        :param url: 分類頁面的 URL
-        """
-        driver = webdriver.Chrome(options=chrome_options)
-        try:
-            driver.get(url)
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'ul.ThirdNavItemList.d-flex')))
-
-            # ✅ 提取產品鏈接
-            product_links = {p.get_attribute('href') for p in driver.find_elements(By.CSS_SELECTOR, 'div.card.hoverable a.text-center')}
-            print(f"🔍 找到 {len(product_links)} 個產品")
-
-            # ✅ 進入每個產品頁面，邊爬邊寫入資料庫
-            for product_url in product_links:
-                get_product_details(driver, product_url)
-
-        finally:
-            driver.quit()
-
-    # === 主函數 ===
-    def savesafe_all_product():
-        """
-        主函數，設置資料庫並啟動爬蟲，抓取分類頁面的產品鏈接，
-        並使用多線程並行處理每個分類頁面。
-        """
-        product_data = []
-        
-
-        driver = webdriver.Chrome(options=chrome_options)
-        try:
-            driver.get("https://www.savesafe.com.tw/")
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'ul.ThirdNavItemList.d-flex')))
-
-            # ✅ 提取分類頁面鏈接
-            linklist = {a.get_attribute('href') for a in driver.find_elements(By.CSS_SELECTOR, 'ul.ThirdNavItemList.d-flex li a')}
-            print(f"🌍 找到 {len(linklist)} 個分類頁面")
-        finally:
-            driver.quit()
-
-        # ✅ 多線程處理分類頁面
-        with ThreadPoolExecutor(max_workers=5) as executor:
-             results = executor.map(visit_link, linklist)
-             
-             # 收集有效的商品數據
-             product_data.extend(filter(None, results))
-             
-        return product_data
+                response = session.get(url, headers=headers)
+                response.raise_for_status()  # 若狀態碼非 200，則拋出異常
+                soup = BeautifulSoup(response.text, "html.parser")
+                
+                # 抓取麵包屑中的分類名稱
+                breadcrumb_links = soup.select('li.breadcrumb-item a')
+                category = breadcrumb_links[-1].get_text(strip=True) if breadcrumb_links else '未知分類'
+                
+                # 抓取所有商品區塊
+                product_cards = soup.select('div.NewActivityItem')
+                for card in product_cards:
+                    # 取得商品連結與圖片連結
+                    link_tag = card.select_one('a.text-center')
+                    if link_tag:
+                        product_url = link_tag.get('href')
+                        
+                        # 確保圖片連結存在
+                        img_tag = link_tag.find('img', class_='card-img-top')
+                        image_url = img_tag['src'] if img_tag and img_tag.has_attr('src') else ''
+                    else:
+                        product_url = ''
+                        image_url = ''
+                    
+                    # 取得商品名稱
+                    name_tag = card.select_one('p.ObjectName')
+                    name = name_tag.get_text(strip=True) if name_tag else ''
+                    
+                    # 取得商品價格
+                    price_tag = card.select_one('span.Price')
+                    price = price_tag.get_text(strip=True) if price_tag else ''
+                    
+                    # 將商品資訊加入列表
+                    all_products.append({
+                        'name': name,
+                        'price': price,
+                        'img_url': image_url,
+                        'product_url': product_url if product_url else '',
+                        'category': category,
+                        'store': 'savesafe'
+                    })
+                    print(name, product_url, price, category, image_url)
+                
+                # 檢查是否存在下一頁的連結
+                next_page_tag = soup.select_one('a.page-link[aria-label="Next"]')
+                if next_page_tag and 'href' in next_page_tag.attrs:
+                    url = base_url + next_page_tag['href']
+                else:
+                    break  # 沒有下一頁時跳出循環
+            except requests.exceptions.RequestException as e:
+                print(f"請求錯誤（{url}）：{e}")
+                break
+    
+    return all_products
 
 def poyabuy():
     # 宣告參數
