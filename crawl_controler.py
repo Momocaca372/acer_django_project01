@@ -336,7 +336,7 @@ class Crawl:
             
             """滾動到底部，爬取商品資訊，並存入 `product_detail` 和 `productl`"""
             
-            driver = webdriver.Chrome(options=chrome_options)
+            driver = webdriver.Chrome(options=cls.chrome_options)
             wait = WebDriverWait(driver, 10, poll_frequency=0.5)
             driver.get(url)
             driver.implicitly_wait(10)
