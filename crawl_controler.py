@@ -44,8 +44,9 @@ class Crawl:
             soup = get_soup(url)
             if soup:
                 # 提取所有分類的鏈接
-                category_links = ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-label')][9:]
-                return category_links
+                category_links = ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-label')]
+                return category_links[9:]
+                # return category_links[9:10]
             return []
 
         def scrape_category_page(category_url):
@@ -126,7 +127,8 @@ class Crawl:
             if soup:
                 link_list = [a.get('href') for a in soup.select('ul#theMenu a.ng-star-inserted')]
                 link_list = list(filter(lambda x: x != 'javascript:void(0)', link_list))  # 過濾掉無效鏈接
-                return link_list[25:-55]
+                return link_list[25:-84]
+                # return link_list[25:27]
             return []  # 若請求失敗或無分類則返回空列表
 
         def scrape_category_page(category_url):
@@ -142,14 +144,14 @@ class Crawl:
                 
                 # 提取分類名稱
                 try:
-                    category = soup.find('h1',class_='category-title').text.strip()
+                    category = soup.select('div.breadcrumb-section a')[-2].text.strip()
                 except (IndexError, AttributeError):
                     category = "未知分類"    
                 
                 # 提取商品信息
                 products = soup.find_all('a',class_='lister-name js-lister-name')
                 prices = soup.select('div.product-price span.notranslate')
-                img_urls = soup.select('div.product-image img')
+                img_urls = soup.select('div.product-image > a > sip-primary-image > sip-media > picture > img')
                 
                 for product, price, img_url in zip(products, prices, img_urls):
                     title = product.text

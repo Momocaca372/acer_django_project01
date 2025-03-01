@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import concurrent.futures
 
+"""只爬取家樂福的商品資料，並存成[{}]的格式"""
+
 # 設置 headers 模擬瀏覽器行為，防止被封鎖
 my_headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
@@ -25,8 +27,8 @@ def get_category_links():
     soup = get_soup(url)
     if soup:
         # 提取所有分類的鏈接
-        category_links = ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-label')][9:]
-        return category_links
+        category_links = ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-label')]
+        return category_links[9:]
     return []
 
 def scrape_category_page(category_url):
