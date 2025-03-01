@@ -116,5 +116,7 @@ def save_to_db(products):
 
 # 主程式
 if __name__ == '__main__':
-    all_products = crawl_controler.Crawl.carrefour() + crawl_controler.Crawl.costco()  # 從爬蟲控制器獲取商品資料
+    # all_products = crawl_controler.Crawl.carrefour()
+    create_table()
+    all_products = crawl_controler.Crawl.costco()  # 從爬蟲控制器獲取商品資料
     save_to_db(all_products)  # 將商品存入資料庫

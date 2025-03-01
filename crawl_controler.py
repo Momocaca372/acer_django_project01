@@ -125,9 +125,9 @@ class Crawl:
             """抓取所有商品分類的鏈接"""
             soup = get_soup(url)
             if soup:
-                link_list = [a.get('href') for a in soup.select('ul#theMenu a.ng-star-inserted')]
-                link_list = list(filter(lambda x: x != 'javascript:void(0)', link_list))  # 過濾掉無效鏈接
-                return link_list[25:-84]
+                link_list = [a.get('href') for a in soup.select('ul#theMenu > li > ul > li > a.ng-star-inserted')]
+                link_list = list(filter(lambda x: x != 'javascript:void(0)' and x != 'https://www.costco.com.tw/Televisions-Appliances/c/395', link_list))  # 過濾掉無效鏈接
+                return link_list[20:88]
                 # return link_list[25:27]
             return []  # 若請求失敗或無分類則返回空列表
 
