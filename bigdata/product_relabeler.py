@@ -95,7 +95,7 @@ def product_relabeler(df):
     df["smoothed_category"] = (
         df["predicted_category"]
         .rolling(window=window_size, min_periods=1)
-        .apply(lambda x: mode(x)[0], raw=True)
+        .apply(lambda x: model(x)[0], raw=True)
         .fillna(1)
     )
     
