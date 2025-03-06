@@ -15,4 +15,5 @@ urlpatterns =[
     path('product/<int:product_id>/', views.product, name='product'),
     re_path(r'^dreamreal/', views.dreamreal, name='dreamreal'),
     path('home/', views.home, name='home'),
+    path('sendSimpleEmail/', views.sendSimpleEmail, name='sendSimpleEmail'), 
     ]
