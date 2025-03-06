@@ -184,3 +184,26 @@ def product(request, product_id):
         'categories': categories,
         'related_products': related_products,
     })
+    def sendSimpleEmail(request):
+    # 嘗試發送郵件
+    res = send_mail("人工客服", "who are you?", "fxxkmenglin@gmail.com", ["fxxkmenglin@gmail.com"])
+
+    # 設置模板變量
+    if res > 0:
+        message = "發送成功，客服將會稍後與您聯繫"
+        border_color = "#4CAF50"  # 綠色邊框
+        background_color = "#dff0d8"  # 綠色背景
+        text_color = "#3c763d"  # 深綠色文字
+    else:
+        message = "發送失敗，請稍後再試"
+        border_color = "#f44336"  # 紅色邊框
+        background_color = "#f2dede"  # 紅色背景
+        text_color = "#a94442"  # 深紅色文字
+
+    # 渲染模板並返回
+    return render(request, 'customer_service.html', {
+        'message': message,
+        'border_color': border_color,
+        'background_color': background_color,
+        'text_color': text_color,
+    })
