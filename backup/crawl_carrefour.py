@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import concurrent.futures
 
+"""只爬取家樂福的商品資料，並存成[{}]的格式"""
+
 # 設置 headers 模擬瀏覽器行為，防止被封鎖
 my_headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"

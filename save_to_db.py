@@ -1,17 +1,22 @@
 import sqlite3
-import os
-import BIBIGOproject.Myproject.settings as settings
 import crawl_controler
+import pathlib
 
 # 連接 SQLite 資料庫
+# 此函式返回 SQLite 連線 (conn) 和游標 (cursor)
 def get_db_connection():
-    conn = sqlite3.connect(os.path.join(settings.BASE_DIR,'db.sqlite3'))
+    base_path = pathlib.Path(__file__).parent  # 獲取當前腳本所在目錄
+    db_path = base_path / "bigdata" 
+    conn = sqlite3.connect(db_path / "db.sqlite3")  # 連接 SQLite 資料庫
     cursor = conn.cursor()
-    return conn,cursor
+    return conn, cursor
 
+# 建立資料表
+# 若資料表不存在，則建立 store、category、product、product_detail
 
 def create_table():
-    conn,cursor = get_db_connection()
+    conn, cursor = get_db_connection()
+    
     # 建立 store 表（店家表）
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS store (
@@ -58,50 +63,60 @@ def create_table():
     conn.commit()
     conn.close()
 
+# 將爬取到的商品資訊存入 SQLite 資料庫
+# 若商品網址已存在則不新增
 def save_to_db(products):
-    """將爬取到的商品資訊存入 SQLite 資料庫"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    conn, cursor = get_db_connection()
 
-    # 儲存店家資訊（如果店家不存在，則新增）
     for product in products:
         store_name = product['store']
+        # 查找店家是否已存在
         cursor.execute('SELECT id FROM store WHERE name = ?', (store_name,))
         store_id = cursor.fetchone()
         if store_id is None:
+            # 若店家不存在，則新增店家
             cursor.execute('INSERT INTO store (name) VALUES (?)', (store_name,))
             store_id = cursor.lastrowid
         else:
             store_id = store_id[0]
 
-    # 儲存商品類別
         category_name = product['category']
-        cursor.execute('SELECT id FROM category WHERE name = ? AND store_id = ?', (category_name, store_id))
+        # 查找商品類別是否已存在
+        cursor.execute('SELECT id FROM category WHERE name = ?', (category_name,))
         category_id = cursor.fetchone()
         if category_id is None:
+            # 若類別不存在，則新增類別
             cursor.execute('INSERT INTO category (store_id, name) VALUES (?, ?)', (store_id, category_name))
             category_id = cursor.lastrowid
         else:
             category_id = category_id[0]
 
-    # 儲存商品
+        # 檢查商品網址是否已存在，若已存在則跳過
+        cursor.execute('SELECT id FROM product_detail WHERE product_url = ?', (product['product_url'],))
+        if cursor.fetchone() is not None:
+            continue
+
+        # 儲存商品到 product 表
         cursor.execute('''
             INSERT INTO product (store_id, category_id) 
             VALUES (?, ?)
         ''', (store_id, category_id))
         product_id = cursor.lastrowid
 
-    # 儲存商品詳細資訊
+        # 儲存商品詳細資訊到 product_detail 表
         cursor.execute('''
             INSERT INTO product_detail (product_id, name, price, image_url, product_url)
             VALUES (?, ?, ?, ?, ?)
         ''', (product_id, product['name'], product['price'], product['img_url'], product['product_url']))
 
+    # 提交變更並關閉連線
     conn.commit()
     conn.close()
-    print(f"成功存入 {len(products)} 筆資料")
-    
-if __name__ == '__main__':
+    print(f"成功存入 {len(products)} 筆資料（不包含重複網址商品）")
 
-    all_products = crawl_controler.carrefour
-    save_to_db(all_products)
+# 主程式
+if __name__ == '__main__':
+    # all_products = crawl_controler.Crawl.carrefour()
+    create_table()
+    all_products = crawl_controler.Crawl.costco()  # 從爬蟲控制器獲取商品資料
+    save_to_db(all_products)  # 將商品存入資料庫
