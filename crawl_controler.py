@@ -7,10 +7,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.common.keys import Keys
-
+import ssl
+from urllib3.poolmanager import PoolManager
+from requests.adapters import HTTPAdapter
 from time import sleep
+import time
 from tqdm import tqdm
-
+from selenium.webdriver.chrome.service import Service
 import re
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 class Crawl:
@@ -31,6 +34,7 @@ class Crawl:
    
         def get_soup(url):
             """發送 GET 請求並返回解析後的 BeautifulSoup 對象"""
+
             try:
                 response = requests.get(url, headers=cls.my_headers, timeout=10)
                 if response.status_code == 200:
@@ -110,6 +114,7 @@ class Crawl:
     def costco(cls):  
         # 設定好事多線上商城的首頁 URL
         url = 'https://www.costco.com.tw/'
+
 
         def get_soup(url):
             """發送 GET 請求並回傳 BeautifulSoup 解析後的內容"""
@@ -327,6 +332,7 @@ class Crawl:
             driver.quit()  # 關閉瀏覽器
 
             print(f"發現 {len(category_names)} 個分類: {category_names}")
+
 
             category_names_map = {}  # 用來存分類名稱對應的 ID
             for index,item in enumerate(category_names):
