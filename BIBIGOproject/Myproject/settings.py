@@ -145,18 +145,34 @@ CACHES = {
     }
 }
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_HOST_USER = "eliste5638@gmail.com"
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "smtp.gmail.com"
+# EMAIL_HOST_USER = "eliste5638@gmail.com"
+# EMAIL_PORT = 465
+# EMAIL_USE_SSL = True
 
-EMAIL_HOST_PASSWORD = "tzgbaltlosxyezgv"
+# EMAIL_HOST_PASSWORD = "tzgbaltlosxyezgv"
+
+# EMAIL_PORT = "465"
+
+# EMAIL_USE_SSL = "True"
+
+# ADMINS = (('admin01', 'eliste5638@gmail.com'),)
+
+# MANAGERS = (('admin01', 'eliste5638@gmail.com'),)
+
+
+
+EMAIL_HOST = "smtp.gmail.com"
+
+EMAIL_HOST_USER = "fxxkmenglin@gmail.com"
+
+EMAIL_HOST_PASSWORD = "kglvkypwnpmanlvj"
 
 EMAIL_PORT = "465"
 
 EMAIL_USE_SSL = "True"
 
-ADMINS = (('admin01', 'eliste5638@gmail.com'),)
+ADMINS = (('GGP', 'fxxkmenglin@gmail.com'),)
 
-MANAGERS = (('admin01', 'eliste5638@gmail.com'),)
+MANAGERS = (('GGP', 'fxxkmenglin@gmail.com'),)
