@@ -27,8 +27,8 @@ def get_category_links():
     soup = get_soup(url)
     if soup:
         # 提取所有分類的鏈接
-        category_links = ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-label')]
-        return category_links[9:]
+        category_links = ['https://online.carrefour.com.tw' + a.get('href') for a in soup.find_all('a', class_='category-panel-label')][9:]
+        return category_links
     return []
 
 def scrape_category_page(category_url):
