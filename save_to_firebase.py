@@ -105,5 +105,9 @@ def save_to_firebase(products):
     
 
 if __name__ == '__main__':
-    all_products = crawl_controler.Crawl.carrefour() + crawl_controler.Crawl.costco()
+    all_products = (
+        crawl_controler.Crawl.carrefour() 
+        + crawl_controler.Crawl.costco() 
+        + crawl_controler.Crawl.poyabuy()
+        )
     save_to_firebase(all_products)

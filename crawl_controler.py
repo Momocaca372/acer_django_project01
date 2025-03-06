@@ -393,35 +393,34 @@ class Crawl:
                     
                     #  使用 `bs4` 解析商品資訊
                     product_name = product.find("div", class_="sc-bxgxFH xMesR").text.strip()
-                    product_price = product.find("div", class_="sc-jEjhTi djfehP").text.replace("$", "").strip()
+                    product_price = product.find("div", class_="sc-jEjhTi djfehP").text.replace("NT$", "").strip()
                     product_image_url = product.find("img")["src"]
                     product_url = product.find("a")["href"]
             
-                    product_list.append((product_name, product_price, product_image_url, product_url))
-                    product_dict={'name': product_name,
+                    product_list.append({'name': product_name,
                             'price': product_price,
                             'img_url': product_image_url,
                             'product_url': product_url,
-                            'classification': category,
-                            'store':'carrefour',
-                            }      
+                            'category': category,
+                            'store':'poyabuy',
+                            })
                 except Exception as e:
                     print(f"爬取商品時發生錯誤: {e}")
                     print( product_name, product_price, product_image_url, product_url)   
             driver.quit()
-            return product_dict
+            return product_list
 
 
         # 取得所有分類，存入 category 表，並獲取分類 ID 對應表
         categorys = get_category_index()
-        
         product_data=[]
         
     # ✅ 多線程處理分類頁面
         with ThreadPoolExecutor(max_workers=5) as executor:
 
-                results = executor.map(fetch_category_url, categorys.keys(), categorys.values())   
-                product_data.extend(filter(None, results))
+                results = executor.map(fetch_category_url, categorys.keys(), categorys.values())
+                for result in results :
+                    product_data.extend(filter(None, result))
                 
         return product_data
 
