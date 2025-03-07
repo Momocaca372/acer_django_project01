@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block extra_styles %}
-    <link rel="stylesheet" href="{% static 'Search.css' %}">
+    <link rel="stylesheet" href="{% static 'search.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -31,7 +31,7 @@
         </div>
     </section>
 
-    <!-- 商品分類、熱門商品、AI客服區域，從左到右排列 -->
+    <!-- 商品分類、搜尋結果、AI客服區域 -->
     <section class="subpage-content-container">
         <div class="subpage-row">
             <aside class="subpage-sidebar">
@@ -65,11 +65,10 @@
                         <ul class="product-grid">
                             {% for product in products %}
                                 <li class="subpage-product-item">
-                                    <!-- 商品圖片 -->
                                     <a href="{% url 'product' product.id %}">
                                         <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-image">
                                         <p class="product-name">{{ product.name }}</p>
-                                        <p>價格: {{ product.price }}</p>
+                                        <p>$ {{ product.price }}</p>
                                     </a>
                                 </li>
                             {% endfor %}

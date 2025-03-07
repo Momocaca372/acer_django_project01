@@ -1,14 +1,7 @@
 from django.contrib import admin
+from .models import Store, Category, Product
 
 # Register your models here.
-
-from .models import Dreamreal,Login,Product, ProductDetail, Store, Category
-
-
-admin.site.register(Dreamreal)
-admin.site.register(Login)
-
-admin.site.register(Product)
-admin.site.register(ProductDetail)
 admin.site.register(Store)
 admin.site.register(Category)
+admin.site.register(Product)

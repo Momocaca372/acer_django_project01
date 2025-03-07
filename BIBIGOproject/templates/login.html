@@ -4,32 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登入頁面</title>
-    <link rel="stylesheet" href="login.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'login.css' %}">
 </head>
 <body>
     <div class="container">
         <div class="tabs">
-            <a href="#" class="active">網站登入</a>
-            <a href="#">註冊</a>
+            <h3>登入</h3>
+            <a href="{% url 'register' %}">註冊</a>
         </div>
-        <form class="login-form">
-            <label for="username">帳號：</label>
-            <input type="text" id="username" placeholder="請輸入帳號">
-            
+        {% if messages %}
+            {% for message in messages %}
+                <p class="{{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+        <form method="POST" action="{% url 'login' %}" class="login-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <label for="email">帳號：</label>
+            <input type="email" id="email" name="email" placeholder="請輸入電子郵件" required>
             <label for="password">密碼：</label>
-            <input type="password" id="password" placeholder="請輸入密碼">
-            
+            <input type="password" id="password" name="password" placeholder="請輸入密碼" required>
             <button type="submit" class="login-btn">登入</button>
         </form>
         <div class="forgot-password">
-            <a href="#">忘記密碼</a>
+            <a href="{% url 'forget_password' %}">忘記密碼</a>
         </div>
         <hr>
         <div class="social-login">
-            <a href="#" class="facebook">FaceBook 登入</a>
-            <a href="#" class="google">Google 登入</a>
-            <a href="#" class="mac">MAC 登入</a>
+            <a href="/" id="google-login" class="google">Google 登入</a>
+            <a href="/" id="facebook-login" class="facebook">Facebook 登入</a>
         </div>
     </div>
+
 </body>
 </html>

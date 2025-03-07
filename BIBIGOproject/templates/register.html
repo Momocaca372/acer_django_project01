@@ -4,32 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>註冊頁面</title>
-    <link rel="stylesheet" href="register.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'register.css' %}">
+    <style>
+        /* 小視窗樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .modal-content button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h2>註冊</h2>
-        <form class="register-form">
-            <label for="name">姓名：</label>
-            <input type="text" id="name" placeholder="請輸入姓名">
+        {% if messages %}
+            {% for message in messages %}
+                <p class="{{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+        <form method="post" class="register-form" id="register-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'subpage' %}">
             
-            <label for="phone">電話：</label>
-            <input type="tel" id="phone" placeholder="請輸入電話">
+            <label for="id_displayName">姓名：</label>
+            <input type="text" name="displayName" id="id_displayName" placeholder="請輸入姓名" value="{{ form.displayName.value|default:'' }}" required>
             
-            <label for="address">地址：</label>
-            <input type="text" id="address" placeholder="請輸入地址">
+            <label for="id_email">EMAIL：</label>
+            <input type="email" name="email" id="id_email" placeholder="請輸入EMAIL" value="{{ form.email.value|default:'' }}" required>
             
-            <label for="id">身分證：</label>
-            <input type="text" id="id" placeholder="請輸入身分證號碼">
+            <label for="id_password">密碼：</label>
+            <input type="password" name="password" id="id_password" placeholder="請輸入至少 6 個字符的密碼" required>
             
-            <label for="job">職業：</label>
-            <input type="text" id="job" placeholder="請輸入職業">
-            
-            <label for="email">EMAIL：</label>
-            <input type="email" id="email" placeholder="請輸入EMAIL">
+            <label for="id_confirm_password">確認密碼：</label>
+            <input type="password" name="confirm_password" id="id_confirm_password" placeholder="請再次輸入密碼" required>
             
             <button type="submit" class="submit-btn">送出</button>
         </form>
     </div>
+
+    <!-- 小視窗 -->
+    <div id="success-modal" class="modal">
+        <div class="modal-content">
+            <p id="modal-message">註冊成功</p>
+            <button onclick="redirectToSubpage()">確認</button>
+        </div>
+    </div>
+
+    <script>
+        function showSuccessModal(message) {
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('success-modal').style.display = 'flex';
+        }
+
+        function redirectToSubpage() {
+            window.location.href = "{% url 'subpage' %}";
+        }
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    showSuccessModal("{{ message }}");
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </script>
 </body>
 </html>

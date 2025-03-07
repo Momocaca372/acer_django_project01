@@ -1,209 +1,186 @@
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, get_object_or_404
-import re, json
-from myapp.models import Dreamreal, Login, ProductDetail, Product, Category
-from myapp.forms import LoginForm, DreamrealForm
-import datetime
-from django.core.cache import cache
-from django.shortcuts import render
-from django.core.mail import send_mail
-# Create your views here.
-
-def send_email(request):
-    send_mail(
-        'Subject here',
-        'Here is the message.',
-        'eliste5638@gmail.com',
-        ['eliste5638@gmail.com'],
-        )
-    return HttpResponse("<h1>Email Sented</h1>")
-
-def my_view(request):
-    cache_key = 'my_cache_key'
-    cache_time = 1800  # 30 minutes
-    data = cache.get(cache_key)
-    if not data:
-        data = 'This is the cached data'
-        cache.set(cache_key, data, cache_time)
-    return render(request, 'index.html', {'data': data})
-
-def login_view(request):
-
-    if request.method == "POST":
-        host_account = request.POST.get("user")
-        host_password = request.POST.get("password")
-        
-        if Login.objects.filter(username=host_account, password=host_password):
-          
-            res=""
-            # Read a specific entry:
-            sorex = Dreamreal.objects.get(name=host_account)
-            res += "name: "+sorex.name+"\n"
-            res += "website: "+sorex.website+"\n"
-            res += "phonenumber: "+str(sorex.phonenumber)+"\n"
-            res += "email: "+sorex.mail+"\n"
-            
-            request.session['username']= host_account
-            request.session['msg']=res
-            
-            response =render(request, 'loggin.html', {"msg": res})
-            response.set_cookie('last_connection', datetime.datetime.now())
-
-            return response
-        else:
-            return render(request, 'index.html', {"data": "invalid user or password"})
-    elif 'username' in request.session and 'last_connection' in request.COOKIES:
-        last_connection = request.COOKIES['last_connection']
-        last_connection_time = datetime.datetime.strptime(last_connection[:-7], "%Y-%m-%d %H:%M:%S")
-
-        if (datetime.datetime.now() - last_connection_time).seconds < 10:
-            res = request.session['msg']
-            return render(request, 'loggin.html', {"msg": res})
-        
-    return render(request, 'index.html')
-
-def logout(request):
-    del request.session['username']
-    return render(request, 'index.html')
-
-
-def validate_password(request):
-    password_rule = re.compile(
-        r"^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.*\d).{8,}$"
-    )
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            password = data.get("password", "")
-            if password_rule.match(password):
-                return JsonResponse({"valid": True})
-            else:
-                return JsonResponse({"valid": False})
-        except Exception as e:
-            return JsonResponse({"valid": False, "error": str(e)})
-    return JsonResponse({"valid": False, "error": "404"})
-
-
-def register(request):
-    Loginform = LoginForm()
-    Dreamrealform = DreamrealForm()
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        website = request.POST.get("website")
-        mail = request.POST.get("mail")
-        phonenumber = request.POST.get("phonenumber")
-        
-        if Login.objects.filter(username=username):
-            return render(request,"register.html",{'msg':"User already exists"})
-        elif username and password :
-            Dreamrealform = Dreamreal(name=username,
-                                    website=website,
-                                    mail=mail,
-                                    phonenumber=phonenumber
-                                    )
-            Dreamrealform.save()
-            Loginform = Login(username=username,
-                                  password=password
-                                  )
-            Loginform.save()
-
-            
-            return render(request,"register.html",{'msg':"Register Success"})
-        else:
-            return render(request,"register.html",{'msg':"User or password is empty"})
-    return render(request,"register.html")
-
-def dreamreal(request):
-    form = DreamrealForm()
-    return render(request, 'dreamreal.html', locals())
-
-def crudops(request):
-    # Creating an entry
-
-    dreamreal = Dreamreal(
-        website="www.google.com",
-        mail="alvin@google.com.com",
-        name="alvin",
-        phonenumber="0911222333"
-    )
-
-    dreamreal.save()
-
-    # Read ALL entries
-    objects = Dreamreal.objects.all()
-    res = 'Printing all Dreamreal entries in the DB : <br>'
-
-    for elt in objects:
-        res += elt.name + "<br>"
-
-    # Read a specific entry:
-    sorex = Dreamreal.objects.get(name="alvin")
-    res += 'Printing One entry <br>'
-    res += sorex.name
-
-    # Delete an entry
-    res += '<br> Deleting an entry <br>'
-    sorex.delete()
-
-    #Update
-    dreamreal = Dreamreal(
-        website="www.google.com",
-        mail="alvin@google.com.com",
-        name="alvin",
-        phonenumber="0911222444"
-    )
-
-    dreamreal.save()
-    res += 'Updating entry<br>'
-
-    dreamreal = Dreamreal.objects.get(name='alvin')
-    dreamreal.name = 'mary'
-    dreamreal.save()
-
-    return HttpResponse(res)
+from django.shortcuts import render, redirect, get_object_or_404
+from BIBIGOproject.firebase_config import firebase
+from django.contrib import messages
+from myapp.models import Product
+# import pyrebase
+import firebase_admin
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.models import User
+from firebase_admin import auth
+import re
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from BIBIGOproject.firebase_config import pyrebase_auth
+import logging
+logger = logging.getLogger(__name__)
+# # Create your views here.
 
 def home(request):
     return render(request, 'base.html')
 
 def subpage(request):
-    return render(request, 'subpage.html')
+    STORE_BASE_URLS = {
+        "1": "https://online.carrefour.com.tw",
+        "2": "https://www.costco.com.tw"
+    }
+
+    hot_products = Product.objects.all()[:10]  # 限制前 10 筆
+    for product in hot_products:
+        product.image_url = product.img_url if product.img_url.startswith('http') else STORE_BASE_URLS[product.store.id] + product.img_url
+        product.product_url = product.product_url if product.product_url.startswith('http') else STORE_BASE_URLS[product.store.id] + product.product_url
+
+    return render(request, 'subpage.html', {'hot_products': hot_products})
 
 def search(request):
-    query = request.GET.get('q', '')  # 從請求中獲取搜索字串
-    products = ProductDetail.objects.filter(name__icontains=query)  # 使用不區分大小寫的模糊查詢
-    return render(request, 'search.html', {'products': products, 'query': query})
+    STORE_BASE_URLS = {
+        "1": "https://online.carrefour.com.tw",
+        "2": "https://www.costco.com.tw"
+    }
+
+    query = request.GET.get('q', '').strip()
+    search_products = []
+
+    if query:
+        products = Product.objects.filter(name__icontains=query)[:10]
+        for product in products:
+            product.image_url = product.img_url if product.img_url.startswith('http') else STORE_BASE_URLS[product.store.id] + product.img_url
+            product.product_url = product.product_url if product.product_url.startswith('http') else STORE_BASE_URLS[product.store.id] + product.product_url
+            search_products.append({
+                'id': product.id,
+                'name': product.name,
+                'price': product.price,
+                'image_url': product.image_url,
+                'product_url': product.product_url
+            })
+
+    return render(request, 'search.html', {
+        'query': query,
+        'products': search_products
+    })
+
+def login_view(request):
+    if 'user_email' in request.session:  # 保留 Firebase 會話檢查
+        return redirect('subpage')
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        next_page = request.POST.get('next', '/myapp/subpage/')
+        try:
+            user = pyrebase_auth.sign_in_with_email_and_password(email, password)
+            request.session['user_email'] = user['email']
+            request.session['firebase_uid'] = user['localId']
+            return redirect(next_page)
+        except Exception as e:
+            messages.error(request, '登入失敗：請檢查您的電子郵件或密碼')
+            return render(request, 'login.html', {'next': next_page})
+    
+    next_page = request.GET.get('next', request.META.get('HTTP_REFERER', '/myapp/subpage/'))
+    return render(request, 'login.html', {'next': next_page})
+
+
+def register_view(request):
+    if request.method == 'POST':
+        display_name = request.POST.get('displayName')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+
+        # 自訂 email 格式驗證
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            messages.error(request, '電子郵件格式無效，請輸入正確的電子郵件地址')
+            return render(request, 'register.html')
+
+        # 密碼一致性檢查
+        if password != confirm_password:
+            messages.error(request, '密碼與確認密碼不一致')
+            return render(request, 'register.html')
+
+        try:
+            user = pyrebase_auth.create_user_with_email_and_password(email, password)
+            auth.update_user(user['localId'], display_name=display_name)
+            request.session['user_email'] = user['email']
+            request.session['firebase_uid'] = user['localId']
+            request.session['display_name'] = display_name
+            messages.success(request, '註冊成功！')
+            return render(request, 'register.html')
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "email_exists" in error_msg:  # 修正為精確匹配
+                messages.error(request, '此電子郵件已被註冊，請使用其他電子郵件或登入。')
+            elif "weak_password" in error_msg or "6" in error_msg:
+                messages.error(request, '密碼長度不足，請輸入至少 6 個字符的密碼。')
+            else:
+                messages.error(request, f'註冊失敗，請稍後再試。錯誤詳情：{str(e)}')
+            return render(request, 'register.html')
+
+    return render(request, 'register.html')
+
+def logout_view(request):
+    if 'user_email' in request.session:
+        del request.session['user_email']
+        del request.session['firebase_uid']
+        if 'display_name' in request.session:
+            del request.session['display_name']
+    # 保留當前頁面
+    return redirect(request.META.get('HTTP_REFERER', 'subpage'))
+
+def forget_password_view(request):
+    if 'user_email' in request.session:
+        return redirect('subpage')
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+
+        # 自訂 email 格式驗證
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            messages.error(request, '電子郵件格式錯誤')
+            return render(request, 'forget_password.html')
+
+        # 使用 Firebase Admin SDK 檢查信箱是否註冊
+        try:
+            auth.get_user_by_email(email)  # 若不存在會拋出異常
+            # 已註冊，發送重設密碼郵件
+            pyrebase_auth.send_password_reset_email(email)
+            messages.success(request, '重設密碼郵件已發送，請檢查您的電子郵件收件箱。')
+            return redirect('login')
+        except auth.UserNotFoundError:
+            # 未註冊信箱
+            messages.error(request, '此電子郵件未註冊')
+            return render(request, 'forget_password.html')
+        except Exception as e:
+            # 其他錯誤
+            messages.error(request, f'發生錯誤，請稍後再試。錯誤詳情：{str(e)}')
+            return render(request, 'forget_password.html')
+
+    return render(request, 'forget_password.html')
 
 def product(request, product_id):
-    product = get_object_or_404(ProductDetail, id=product_id)
-    categories = Category.objects.all()  # 獲取所有分類
-    related_products = ProductDetail.objects.filter(product__category=product.product.category).exclude(id=product.id)[:5]
+    STORE_BASE_URLS = {
+        "1": "https://online.carrefour.com.tw",
+        "2": "https://www.costco.com.tw"
+    }
+
+    # 獲取單一商品
+    product = get_object_or_404(Product, id=product_id)
+    
+    # 處理圖片和商品連結的 URL
+    product.image_url = product.img_url if product.img_url.startswith('http') else STORE_BASE_URLS[product.store.id] + product.img_url
+    product.product_url = product.product_url if product.product_url.startswith('http') else STORE_BASE_URLS[product.store.id] + product.product_url
+
+    # 相關商品（根據類別推薦）
+    related_products = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
+
+    # 為相關商品處理 URL
+    for related in related_products:
+        related.image_url = related.img_url if related.img_url.startswith('http') else STORE_BASE_URLS[related.store.id] + related.img_url
+        related.product_url = related.product_url if related.product_url.startswith('http') else STORE_BASE_URLS[related.store.id] + related.product_url
 
     return render(request, 'product.html', {
         'product': product,
-        'categories': categories,
-        'related_products': related_products,
+        'related_products': related_products
     })
-def sendSimpleEmail(request):
-    # 嘗試發送郵件
-    res = send_mail("人工客服", "who are you?", "fxxkmenglin@gmail.com", ["fxxkmenglin@gmail.com"])
 
-    # 設置模板變量
-    if res > 0:
-        message = "發送成功，客服將會稍後與您聯繫"
-        border_color = "#4CAF50"  # 綠色邊框
-        background_color = "#dff0d8"  # 綠色背景
-        text_color = "#3c763d"  # 深綠色文字
-    else:
-        message = "發送失敗，請稍後再試"
-        border_color = "#f44336"  # 紅色邊框
-        background_color = "#f2dede"  # 紅色背景
-        text_color = "#a94442"  # 深紅色文字
-
-    # 渲染模板並返回
-    return render(request, 'customer_service.html', {
-        'message': message,
-        'border_color': border_color,
-        'background_color': background_color,
-        'text_color': text_color,
-    })
+def care(request):
+    return render(request, 'care.html')

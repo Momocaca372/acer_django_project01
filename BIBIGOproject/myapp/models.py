@@ -1,72 +1,43 @@
 from django.db import models
 
+# Create your models here.
+
 
 class Store(models.Model):
-    id = models.AutoField(primary_key=True)  # 自動遞增的主鍵
-    name = models.CharField(max_length=255)  # 商店名稱，不允許為空
+    id = models.CharField(max_length=10, primary_key=True)  # 索引作為 ID
+    name = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.name  # 在 Django Admin 或 shell 顯示商店名稱
-
+        return self.name
 
 class Category(models.Model):
-    id = models.AutoField(primary_key=True)  # 自動遞增的主鍵
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)  # 關聯到 `store` 表
-    name = models.CharField(max_length=255)  # 分類名稱，不允許為空
+    id = models.CharField(max_length=10, primary_key=True)  # 索引作為 ID
+    name = models.CharField(max_length=100)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name  # 在 Django Admin 或 shell 顯示分類名稱
-
+        return self.name
 
 class Product(models.Model):
-    id = models.AutoField(primary_key=True)  # 自動遞增的主鍵
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)  # 關聯 store 表
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)  # 關聯 category 表
+    id = models.CharField(max_length=10, primary_key=True)  # 索引作為 ID
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    img_url = models.URLField(max_length=500)
+    name = models.CharField(max_length=200)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    product_url = models.URLField(max_length=500)
 
     def __str__(self):
-        return f"Product {self.id}"  # 讓 Django Admin 介面顯示 Product ID
-
-
-class ProductDetail(models.Model):
-    id = models.AutoField(primary_key=True)  # 自動遞增的主鍵
-    product = models.ForeignKey(  # 外鍵關聯到 `product` 表的 `id`
-        Product,
-        on_delete=models.CASCADE
-    )
-    name = models.CharField(max_length=255)  # 商品名稱
-    price = models.DecimalField(max_digits=10, decimal_places=2)  # 商品價格
-    image_url = models.TextField(blank=True, null=True)  # 圖片網址，可為空
-    product_url = models.TextField(blank=True, null=True)  # 產品頁面網址，可為空
-
-    def __str__(self):
-        return self.name  # 在 Django Admin 或 shell 顯示商品名稱
-
-        
-class Login(models.Model):
-    username = models.CharField(max_length=100)
-    password = models.CharField(max_length=100)
+        return self.name
     
-    class Meta:
-        db_table = "login"
+class DataEntry(models.Model):
+    index = models.IntegerField(unique=True)  # 陣列中的索引
+    value = models.IntegerField(null=True, blank=True)  # 允許 null 值
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-
-
-
-# Create your models here.
-class Dreamreal(models.Model):
-    website = models.CharField(max_length=50)
-    mail = models.CharField(max_length=50)
-    name = models.CharField(max_length=50)
-    phonenumber = models.IntegerField()
-    #online = models.ForeignKey('Online', default=1, on_delete=models.CASCADE, db_constraint=False)
+    def __str__(self):
+        return f"Index {self.index}: {self.value}"
 
     class Meta:
-        db_table = "dreamreal"
-        
-# class Online(models.Model):
-#     domain = models.CharField(max_length=30)
-
-#     class Meta:
-#         db_table = "online"
-
-
+        ordering = ['index']  # 按索引排序

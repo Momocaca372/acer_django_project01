@@ -17,16 +17,6 @@
                     <img src="{% static '放大鏡.png' %}" alt="搜尋圖示" width="20" height="20">
                 </button>
             </div>
-            <div class="subpage-search-tag">
-                <p class="subpage-search-label">熱門搜尋</p>
-                <div class="subpage-tags">
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>                    
-                </div>
-            </div>
         </div>
     </section>
 
@@ -76,20 +66,5 @@
             </aside>
         </div>
     </section>
-    <script>
-        <!-- 展開商品分類的子列表 -->
-        document.addEventListener('DOMContentLoaded', function () {
-            const categories = document.querySelectorAll('.subpage-category');
-            categories.forEach(function (category) {
-                category.addEventListener('click', function () {
-                    category.classList.toggle('active');
-                    const subList = category.querySelector('.subpage-sub-list');
-                    if (subList) {
-                        subList.style.display = subList.style.display === 'block' ? 'none' : 'block';
-                    }
-                });
-            });
-        });
-    </script>
 </div>
 {% endblock %}

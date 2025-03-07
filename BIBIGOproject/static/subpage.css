@@ -1,7 +1,7 @@
-container/* 設定整體容器樣式 */
+/* 設定整體容器樣式 */
 .subpage-container {
     max-width: 1900px; /* 限制最大寬度，避免內容在超大螢幕上過度延展 */
-    width: 100%; /* 頁面寬度為螢幕的 90% */
+    width: 100%; /* 頁面寬度為螢幕的 100% */
     margin: 0 auto; /* 讓容器水平置中 */
 }
 
@@ -18,7 +18,7 @@ container/* 設定整體容器樣式 */
     flex-wrap: wrap; /* 允許內容換行 */
     justify-content: center; /* 讓子元素水平置中 */
     width: 100%; /* 讓區塊填滿整個可用空間 */
-    margin-top: 10px; /* 設定上邊距為 20px */
+    margin-top: 10px; /* 設定上邊距為 10px */
 }
 
 /* 商品分類側邊欄 */
@@ -27,38 +27,102 @@ container/* 設定整體容器樣式 */
     max-width: 20%; /* 最大寬度為 20% */
     padding: 20px; /* 設定內邊距 */
     background-color: transparent; /* 完全透明背景 */
-    font-size: 20px; /* 設定字體大小為 16px */
+    font-size: 20px; /* 設定字體大小為 20px */
 }
 
 /* 去除父分類的圓點 */
 .subpage-list-unstyled {
     list-style-type: none; /* 不顯示圓點 */
     padding-left: 0; /* 移除內邊距 */
-    margin-top: 5px; /* 設定上邊距為 20px */
+    margin-top: 5px; /* 設定上邊距為 5px */
 }
 
 /* 去除子分類的圓點 */
 .subpage-sub-list {
     list-style-type: none; /* 不顯示圓點 */
-    padding-left: 20px; /* 可以根據需要設置縮進 */
+    padding-left: 20px; /* 設定縮進 */
 }
 
 /* 主內容區域 */
 .subpage-content {
     flex: 2 1 600px; /* 主要內容區域較大，最小寬度 600px */
-    max-width: 100%; /* 最大寬度為 60% */
+    max-width: 60%; /* 最大寬度為 60% */
     padding: 20px; /* 設定內邊距 */
-    font-size: 20px; /* 設定字體大小為 16px */
+    font-size: 20px; /* 設定字體大小為 20px */
+}
+
+/* 熱門商品容器 */
+.subpage-products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+/* 單個商品項目（現在是連結） */
+.subpage-product-item {
+    display: block; /* 確保作為連結時顯示為塊級元素 */
+    width: 200px;
+    text-align: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    text-decoration: none; /* 移除連結底線 */
+    color: inherit; /* 繼承文字顏色 */
+}
+
+/* 商品項目懸停效果 */
+.subpage-product-item:hover {
+    transform: scale(1.05);
+    background-color: #e9ecef; /* 懸停時略深背景 */
+}
+
+/* 商品圖片 */
+.subpage-product-item img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+/* 商品名稱 */
+.subpage-product-item p {
+    margin: 10px 0 5px;
+    font-size: 16px;
+    color: #333;
+}
+
+/* 商品價格 */
+.subpage-product-item p:nth-child(3) {
+    font-weight: bold;
+    color: #dc3545;
+}
+
+/* 商品連結 */
+.subpage-product-item a {
+    display: inline-block; /* 讓連結以塊級顯示 */
+    margin-top: 5px; /* 上邊距 */
+    padding: 5px 10px; /* 內邊距 */
+    background-color: #ffffff; /* 藍色背景 */
+    color: white; /* 白色文字 */
+    text-decoration: none; /* 移除底線 */
+    border-radius: 5px; /* 圓角 */
+}
+
+/* 連結懸停效果 */
+.subpage-product-item a:hover {
+    background-color: #0056b3; /* 深藍色 */
 }
 
 /* AI 客服區塊 */
 .subpage-ai-service {
-    font-size: 20px; /* 設定字體大小為 16px */
+    font-size: 20px; /* 設定字體大小為 20px */
     flex: 1 1 200px; /* 最小寬度 200px，並允許調整 */
     max-width: 20%; /* 最大寬度為 20% */
     padding: 20px; /* 設定內邊距 */
     background-color: transparent; /* 完全透明背景 */
-    color: rgb(0, 0, 0); /* 設定文字顏色為白色 */
+    color: rgb(0, 0, 0); /* 設定文字顏色為黑色 */
 }
 
 .subpage-search-container {
@@ -70,7 +134,7 @@ container/* 設定整體容器樣式 */
     display: flex; /* 使用 Flexbox 進行排列 */
     width: 100%; /* 讓區塊填滿父容器 */
     max-width: 800px; /* 限制最大寬度 */
-    margin-left: 400px; /* 向左移動 20px */
+    margin-left: 400px; /* 向左移動 400px */
     gap: 0px; /* 設定輸入框和按鈕之間的間距 */
     justify-content: space-between; /* 讓輸入框和按鈕保持間距 */
     align-items: center; /* 垂直置中 */
@@ -78,7 +142,7 @@ container/* 設定整體容器樣式 */
 
 /* 搜索框內的輸入框 */
 .subpage-search-bar input {
-    font-size: 15px; /* 設定字體大小為 16px */
+    font-size: 15px; /* 設定字體大小為 15px */
     width: auto; /* 讓輸入框根據內容調整寬度 */
     min-width: 500px; /* 設定最小寬度 */
     max-width: 100%; /* 確保不會超過父容器 */
@@ -90,105 +154,126 @@ container/* 設定整體容器樣式 */
 
 /* 搜索按鈕 */
 .subpage-search-bar button {
-    padding: 7px 10px; /* 增大內邊距，設定按鈕的上下和左右內邊距 */
-    background-color: #007bff; /* 設定背景顏色為藍色 */
+    padding: 7px 10px; /* 增大內邊距 */
+    background-color: #007bff; /* 藍色背景 */
     border: none; /* 移除邊框 */
     border-radius: 5px; /* 設定圓角 */
-    color: white; /* 設定文字顏色為白色 */
-    cursor: pointer; /* 讓鼠標變成指標，表示可點擊 */
-    font-size: 16px; /* 設定字體大小，增加按鈕文字的可見性 */
-    width: auto; /* 讓按鈕寬度根據內容自動調整 */
+    color: white; /* 白色文字 */
+    cursor: pointer; /* 鼠標指標 */
+    font-size: 16px; /* 文字大小 */
+    width: auto; /* 自動寬度 */
     position: relative; /* 相對定位 */
-    top: 2px; /* 讓按鈕向下移動 10px */
-    left: -4px;
+    top: 2px; /* 向下移動 2px */
+    left: -4px; /* 向左微調 */
 }
 
 /* 熱門搜尋標籤 */
 .subpage-search-tag {
-    display: flex; /* 使用 Flexbox 進行排列 */
-    align-items: center; /* 讓標籤與文字垂直置中 */
-    margin-bottom: 20px; /* 設定與下方內容的間距 */
-    margin-top: 10px; /* 設定上邊距為 20px */
-    margin-left: 400px; /* 向左移動 20px */
+    display: flex; /* 使用 Flexbox */
+    align-items: center; /* 垂直置中 */
+    margin-bottom: 20px; /* 下邊距 */
+    margin-top: 10px; /* 上邊距 */
+    margin-left: 400px; /* 左邊距 */
 }
 
 /* 熱門搜尋標籤標題 */
 .subpage-search-label {
-    background-color: #dc3545; /* 設定紅色背景 */
-    color: white; /* 設定文字顏色為白色 */
-    padding: 8px 15px; /* 設定內邊距 */
-    border-radius: 5px; /* 設定圓角 */
+    background-color: #dc3545; /* 紅色背景 */
+    color: white; /* 白色文字 */
+    padding: 8px 15px; /* 內邊距 */
+    border-radius: 5px; /* 圓角 */
 }
 
 /* 熱門搜尋標籤的內容 */
 .subpage-tags {
-    display: flex; /* 使用 Flexbox 進行排列 */
+    display: flex; /* 使用 Flexbox */
     flex-wrap: wrap; /* 允許換行 */
-    gap: 10px; /* 設定標籤之間的間距 */
-    margin-left: 20px; /* 設定左邊距 */
+    gap: 10px; /* 標籤間距 */
+    margin-left: 20px; /* 左邊距 */
 }
 
 /* 單個標籤 */
 .subpage-tag {
-    padding: 5px 10px; /* 設定內邊距 */
-    border: 1px solid #ccc; /* 設定邊框顏色 */
-    border-radius: 20px; /* 設定圓角 */
-    text-decoration: none; /* 去除超連結的底線 */
-    color: #333; /* 設定文字顏色 */
+    padding: 5px 10px; /* 內邊距 */
+    border: 1px solid #ccc; /* 邊框 */
+    border-radius: 20px; /* 圓角 */
+    text-decoration: none; /* 移除底線 */
+    color: #333; /* 文字顏色 */
 }
 
-/* 當鼠標懸停時的標籤效果 */
+/* 標籤懸停效果 */
 .subpage-tag:hover {
-    background-color: #007bff; /* 背景顏色變為藍色 */
-    color: white; /* 文字顏色變為白色 */
+    background-color: #007bff; /* 藍色背景 */
+    color: white; /* 白色文字 */
 }
 
 /* 商品分類區塊 */
 .subpage-category {
-    cursor: pointer; /* 讓鼠標變為指標，表示可點擊 */
-    margin-bottom: 10px; /* 設定底部間距 */
+    cursor: pointer; /* 鼠標指標 */
+    margin-bottom: 10px; /* 底部間距 */
 }
 
 /* 商品分類的子列表（預設隱藏） */
 .subpage-sub-list {
-    display: none; /* 初始時不顯示 */
-    margin-left: 20px; /* 設定左邊距 */
+    display: none; /* 初始隱藏 */
+    margin-left: 20px; /* 左邊距 */
 }
 
-/* 當分類展開時，顯示子列表 */
+/* 分類展開時顯示子列表 */
 .subpage-category.active .subpage-sub-list {
-    display: block;
+    display: block; /* 顯示 */
 }
 
-/* 當鼠標懸停在分類時，改變背景顏色 */
+/* 分類懸停效果 */
 .subpage-category:hover {
-    background-color: #f8f9fa;
+    background-color: #f8f9fa; /* 淺灰背景 */
 }
 
-/* AI 客服區塊內的 iframe 設定 */
+/* AI 客服區塊內的 iframe */
 .subpage-ai-service iframe {
-    width: 100%; /* 讓 iframe 填滿父容器 */
-    height: 400px; /* 設定高度 */
-    border-radius: 10px; /* 設定圓角 */
+    width: 100%; /* 填滿容器 */
+    height: 400px; /* 高度 */
+    border-radius: 10px; /* 圓角 */
     border: none; /* 移除邊框 */
 }
 
-/* 響應式設計（適用於平板與手機） */
+.success {
+    color: green;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.error {
+    color: #dc3545;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+/* 響應式設計（平板與手機） */
 @media (max-width: 992px) {
-    /* 當螢幕寬度小於 992px 時，三個區塊改為上下排列 */
     .subpage-sidebar, .subpage-content, .subpage-ai-service {
-        max-width: 100%; /* 讓區塊填滿整個可用寬度 */
-        flex: 1 1 100%; /* 讓區塊占滿整列 */
+        max-width: 100%; /* 填滿寬度 */
+        flex: 1 1 100%; /* 占滿整列 */
     }
 
-    /* 搜索框在小螢幕時改為垂直排列 */
     .subpage-search-bar {
-        flex-direction: column;
-        width: 90%;
+        flex-direction: column; /* 垂直排列 */
+        width: 90%; /* 寬度調整 */
+        margin-left: 0; /* 移除左邊距 */
     }
 
-    /* 搜索輸入框與按鈕間的間距 */
     .subpage-search-bar input {
-        margin-bottom: 10px;
+        margin-bottom: 10px; /* 输入框下邊距 */
+    }
+
+    .subpage-search-tag {
+        margin-left: 0; /* 移除左邊距 */
+        flex-direction: column; /* 垂直排列 */
+        align-items: flex-start; /* 左對齊 */
+    }
+
+    .subpage-tags {
+        margin-left: 0; /* 移除左邊距 */
+        margin-top: 10px; /* 上邊距 */
     }
 }

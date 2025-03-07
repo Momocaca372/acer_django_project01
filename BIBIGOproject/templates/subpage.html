@@ -9,13 +9,12 @@
 {% block content %}
 <div class="subpage-container">
     <section class="subpage-row">
-        <!-- 搜索區，位於導航列下面 -->
         <div class="subpage-search-container">
             <div class="subpage-search-bar">
                 <form method="get" action="{% url 'search' %}">
                     <input type="text" name="q" class="subpage-form-control" placeholder="搜尋商品" aria-label="搜尋商品">
                     <button type="submit" class="subpage-btn" aria-label="搜尋">
-                    <img src="{% static '放大鏡.png' %}" alt="搜尋圖示" width="20" height="20">
+                        <img src="{% static '放大鏡.png' %}" alt="搜尋圖示" width="20" height="20">
                     </button>
                 </form>
             </div>
@@ -31,9 +30,13 @@
         </div>
     </section>
 
-    <!-- 商品分類、熱門商品、AI客服區域，從左到右排列 -->
     <section class="subpage-content-container">
         <div class="subpage-row">
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="{{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
             <aside class="subpage-sidebar">
                 <h1>商品分類</h1>
                 <ul class="subpage-list-unstyled">
@@ -62,7 +65,17 @@
             <main class="subpage-content">
                 <h1>熱門商品</h1>
                 <div class="subpage-products">
-                    <!-- 商品動態加載 -->
+                    {% for product in hot_products %}
+                        <div class="subpage-product-item">
+                            <a href="{% url 'product' product.id %}">
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width: 100px;">
+                                <p>{{ product.name }}</p>
+                                <p>價格: NT$ {{ product.price }}</p>
+                            </a>
+                        </div>
+                    {% empty %}
+                        <p>暫無熱門商品</p>
+                    {% endfor %}
                 </div>
             </main>
             <aside class="subpage-ai-service">
@@ -77,20 +90,5 @@
             </aside>
         </div>
     </section>
-    {% comment %} <script>
-        <!-- 展開商品分類的子列表 -->
-        document.addEventListener('DOMContentLoaded', function () {
-            const categories = document.querySelectorAll('.subpage-category');
-            categories.forEach(function (category) {
-                category.addEventListener('click', function () {
-                    category.classList.toggle('active');
-                    const subList = category.querySelector('.subpage-sub-list');
-                    if (subList) {
-                        subList.style.display = subList.style.display === 'block' ? 'none' : 'block';
-                    }
-                });
-            });
-        });
-    </script> {% endcomment %}
 </div>
 {% endblock %}

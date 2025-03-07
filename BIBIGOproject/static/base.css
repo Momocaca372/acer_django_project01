@@ -98,14 +98,13 @@ body {
     text-align: center; /* 讓頁尾文字居中 */
     padding: 20px; /* 設定頁尾內邊距 */
     border-top: 1px solid #ddd; /* 頁尾上方加一條灰色邊框 */
-    position: fixed; /* 固定頁尾位置 */
-    bottom: 0; /* 讓頁尾緊貼頁面底部 */
     width: 100%; /* 設定頁尾寬度為 100% */
-    z-index: 10; /* 確保頁尾在其他內容之上 */
+
 }
 
 .footer p {
     color: #777; /* 設定頁尾文字顏色 */
+    margin: 0; /* 移除預設外邊距，確保貼合 */
 }
 
 /* 響應式設計 */

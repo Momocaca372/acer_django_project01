@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'base.css' %}">
     {% block extra_styles %}
     <link rel="stylesheet" href="{% static 'subpage.css' %}">
-    <link rel="stylesheet" href="{% static 'Search.css' %}">
+    <link rel="stylesheet" href="{% static 'search.css' %}">
     <link rel="stylesheet" href="{% static 'cat.css' %}">
     <link rel="stylesheet" href="{% static 'hot.css' %}">
     <link rel="stylesheet" href="{% static 'care.css' %}">
@@ -21,7 +21,7 @@
     <header class="header">
         <div class="container">
             <!-- 頁面標誌 -->
-            <a href="/myapp/subpage/" class="logo">
+            <a href="{% url 'subpage' %}" class="logo">
                 <img src="{% static 'LOGO.jpg' %}" alt="bibigo Logo" class="logo-img">
             </a>
 
@@ -30,13 +30,17 @@
                 <ul class="nav-links">
                     <li><a href="#">熱門商品</a></li>
                     <li><a href="#">商品分類</a></li>
-                    <li><a href="#">關注商品</a></li>
+                    <li><a href="/myapp/care/">關注商品</a></li>
                 </ul>
             </nav>
 
-            <!-- 登入註冊按鈕 -->
+            <!-- 登入註冊/登出按鈕 -->
             <div class="auth-buttons">
-                <button class="btn-auth">登入 | 註冊</button>
+                {% if request.session.user_email %}
+                    <a href="{% url 'logout' %}" class="btn-auth">登出</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-auth">登入 | 註冊</a>
+                {% endif %}
             </div>
         </div>
     </header>
@@ -49,7 +53,7 @@
 
     <!-- 頁尾 -->
     <footer class="footer">
-        <p>&copy; 2025 bibigo. 版權所有。</p>
+        <p>© 2025 bibigo. 版權所有。</p>
     </footer>
 </body>
 </html>

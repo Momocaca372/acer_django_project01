@@ -12,10 +12,21 @@
         <!-- 搜索區，位於導航列下面 -->
         <div class="product-search-container">
             <div class="product-search-bar">
-                <input type="text" class="product-form-control" placeholder="搜尋商品" aria-label="搜尋商品">
-                <button class="product-btn" aria-label="搜尋">
-                    <img src="{% static '放大鏡.png' %}" alt="搜尋圖示" width="20" height="20">
-                </button>
+                <form method="GET" action="{% url 'search' %}">
+                    <input type="text" name="q" class="product-form-control" placeholder="搜尋商品" aria-label="搜尋商品">
+                    <button class="product-btn" type="submit" aria-label="搜尋">
+                        <img src="{% static '放大鏡.png' %}" alt="搜尋圖示" width="20" height="20">
+                    </button>
+                </form>
+            </div>
+            <div class="product-search-tag">
+                <p class="product-search-label">熱門搜尋</p>
+                <div class="product-tags">
+                    <a href="{% url 'search' %}?q=筆電" class="product-tag">筆電</a>
+                    <a href="{% url 'search' %}?q=手機" class="product-tag">手機</a>
+                    <a href="{% url 'search' %}?q=電腦" class="product-tag">電腦</a>
+                    <a href="{% url 'search' %}?q=相機" class="product-tag">相機</a>
+                </div>
             </div>
         </div>
     </section>
@@ -25,16 +36,7 @@
             <aside class="product-sidebar">
                 <h1>商品分類</h1>
                 <ul class="product-list-unstyled">
-                    {% for category in categories %}
-                        <li class="product-category">
-                            {{ category.name }}
-                            <ul class="product-sub-list">
-                                {% for sub_category in category.sub_categories.all %}
-                                    <li>{{ sub_category.name }}</li>
-                                {% endfor %}
-                            </ul>
-                        </li>
-                    {% endfor %}
+                    <li class="product-category">分類範例</li>
                 </ul>
             </aside>
 
@@ -44,25 +46,23 @@
                     <div class="product-details">
                         <h2>{{ product.name }}</h2>
                         <p class="product-price">$ {{ product.price }}</p>
-                    
-                    
-                        <div class="price-comparison">
-                            {% for store in product.stores.all %}
-                                <span>{{ store.name }}: NT$ {{ store.price }}</span>
-                            {% endfor %}
-                        </div>
                     </div>
-                    
                     <div class="follow-btn-container">
                         <button class="follow-btn">關注商品</button>
                     </div>
                 </div>
-
-                {% comment %} <div class="product-info">
-                    <h2>{{ product.name }}</h2>
-                    <p>價格：NT$ {{ product.price }}</p> {% endcomment %}
-
-                {% comment %} </div> {% endcomment %}
+                <section class="store-pricing">
+                    <h3>店家價格</h3>
+                    <div class="store-list">
+                        <div class="store-item">
+                            <span class="rank">1</span>
+                            <img src="{% if product.store.id == '1' %}{% static '家樂福LOGO.jpg' %}{% elif product.store.id == '2' %}{% static 'COSTCO.png' %}{% endif %}" alt="{{ product.store.name }} LOGO" class="store-logo">
+                            <span class="product-name">{{ product.name }}</span>
+                            <span class="product-price">NT$ {{ product.price }}</span>
+                            <a href="{{ product.product_url }}" target="_blank" class="buy-btn">購買</a>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             <aside class="related-products">
@@ -81,38 +81,7 @@
                     {% endfor %}
                 </div>
             </aside>
-        </div>    
-    </section>
-
-    <section class="store-pricing">
-        <h3>店家價格</h3>
-        <div class="store-list">
-            {% for store in product.stores.all %}
-                <div class="store-item">
-                    <span class="rank">{{ forloop.counter }}</span>
-                    <img src="{{ store.logo_url }}" alt="{{ store.name }} LOGO" class="store-logo">
-                    <span class="product-name">{{ product.name }}</span>
-                    <span class="product-price">NT$ {{ store.price }}</span>
-                    <button class="buy-btn">購買</button>
-                </div>
-            {% endfor %}
         </div>
     </section>
-
-    <script>
-        // 展開商品分類的子列表
-        document.addEventListener('DOMContentLoaded', function () {
-            const categories = document.querySelectorAll('.product-category');
-            categories.forEach(function (category) {
-                category.addEventListener('click', function () {
-                    category.classList.toggle('active');
-                    const subList = category.querySelector('.product-sub-list');
-                    if (subList) {
-                        subList.style.display = subList.style.display === 'block' ? 'none' : 'block';
-                    }
-                });
-            });
-        });        
-    </script>
 </div>
 {% endblock %}
