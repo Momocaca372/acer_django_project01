@@ -72,7 +72,7 @@ class Crawl:
                 # 提取商品信息
                 products = soup.select('div.desc-operation-wrapper a')
                 prices = soup.find_all('div', class_='current-price')
-                img_urls = soup.select('div.box-img img')
+                img_urls = soup.select('div.box-img > a >img')
 
                 for product, price, img_url in zip(products, prices, img_urls):
                     title = product.text
@@ -394,7 +394,7 @@ class Crawl:
                     #  使用 `bs4` 解析商品資訊
                     product_name = product.find("div", class_="sc-bxgxFH xMesR").text.strip()
                     product_price = product.find("div", class_="sc-jEjhTi djfehP").text.replace("NT$", "").strip()
-                    product_image_url = product.find("img")["src"]
+                    product_image_url = product.find("img",clsaa_="product-card__vertical__media product-card__vertical__media-tall")["src"]
                     product_url = product.find("a")["href"]
             
                     product_list.append({'name': product_name,
