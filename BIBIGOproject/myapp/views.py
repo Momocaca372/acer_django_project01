@@ -184,7 +184,7 @@ def product(request, product_id):
         'categories': categories,
         'related_products': related_products,
     })
-    def sendSimpleEmail(request):
+def sendSimpleEmail(request):
     # 嘗試發送郵件
     res = send_mail("人工客服", "who are you?", "fxxkmenglin@gmail.com", ["fxxkmenglin@gmail.com"])
 
