@@ -10,6 +10,7 @@ from selenium.webdriver.common.keys import Keys
 from time import sleep
 from tqdm import tqdm
 import re
+from urllib.parse import urlparse, parse_qs, urlencode, urljoin
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 class Crawl:
     my_headers={
