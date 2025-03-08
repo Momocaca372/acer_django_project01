@@ -14,11 +14,12 @@ class SSLAdapter(HTTPAdapter):
         # 創建一個默認的 SSL 上下文
         ctx = ssl.create_default_context()
         # 設置加密套件的安全等級為 1，允許較小的 DH 金鑰
-        ctx.set_ciphers('DEFAULT:@SECLEVEL=1')
+        ctx.set_ciphers('DEFAULT:@SECLEVEL=0')
         # 初始化連線池管理器，並指定使用自定義的 SSL 上下文
         self.poolmanager = PoolManager(
             num_pools=connections, maxsize=maxsize, block=block, ssl_context=ctx
         )
+
 
 def saveself(driver_path=None):
     base_url = 'https://www.savesafe.com.tw/'
@@ -32,9 +33,7 @@ def saveself(driver_path=None):
     session.mount('https://', SSLAdapter())
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/133.0.0.0 Safari/537.36"
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
     }
 
     try:
@@ -105,4 +104,4 @@ def saveself(driver_path=None):
 
 
 # 只需直接呼叫 saveself() 即可運行
-saveself()  # 不需要再指定變數來儲存返回值
+a = saveself()  # 不需要再指定變數來儲存返回值
