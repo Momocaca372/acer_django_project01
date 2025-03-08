@@ -1,0 +1,6 @@
+django
+gunicorn 
+django_heroku
+requests
+firebase_admin
+pyrebase4
