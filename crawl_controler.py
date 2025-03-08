@@ -11,7 +11,18 @@ from time import sleep
 from tqdm import tqdm
 import re
 from urllib.parse import urlparse, parse_qs, urlencode, urljoin
+import ssl
+import time
+from requests.adapters import HTTPAdapter
+from urllib3.poolmanager import PoolManager
+from selenium.webdriver.chrome.service import Service
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
+class SSLAdapter(HTTPAdapter):
+    """自訂 SSL 適配器，允許較舊的加密方式。"""
+    def init_poolmanager(self, connections, maxsize, block=False):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers('DEFAULT:@SECLEVEL=1')
+        self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, ssl_context=ctx) 
 class Crawl:
     my_headers={
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
@@ -22,12 +33,8 @@ class Crawl:
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--enable-unsafe-swiftshader")          
-class SSLAdapter(HTTPAdapter):
-    """自訂 SSL 適配器，允許較舊的加密方式。"""
-    def init_poolmanager(self, connections, maxsize, block=False):
-        ctx = ssl.create_default_context()
-        ctx.set_ciphers('DEFAULT:@SECLEVEL=1')
-        self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, ssl_context=ctx) 
+
+        
     @classmethod
     def carrefour(cls):
         # 家樂福的首頁 URL
