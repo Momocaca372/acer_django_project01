@@ -7,13 +7,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.common.keys import Keys
-import ssl
-from urllib3.poolmanager import PoolManager
-from requests.adapters import HTTPAdapter
 from time import sleep
-import time
 from tqdm import tqdm
-from selenium.webdriver.chrome.service import Service
 import re
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 class Crawl:
@@ -394,7 +389,7 @@ class Crawl:
                     #  使用 `bs4` 解析商品資訊
                     product_name = product.find("div", class_="sc-bxgxFH xMesR").text.strip()
                     product_price = product.find("div", class_="sc-jEjhTi djfehP").text.replace("NT$", "").strip()
-                    product_image_url = product.find("img",clsaa_="product-card__vertical__media product-card__vertical__media-tall")["src"]
+                    product_image_url = product.find("img",class_="product-card__vertical__media product-card__vertical__media-tall")["src"]
                     product_url = product.find("a")["href"]
             
                     product_list.append({'name': product_name,
@@ -423,5 +418,3 @@ class Crawl:
                     product_data.extend(filter(None, result))
                 
         return product_data
-
-# 使用方式Crawl.poyabuy()
