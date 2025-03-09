@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% load static %}
 
 {% block extra_styles %}
@@ -8,63 +7,107 @@
 
 {% block content %}
 <div class="subpage-container">
-    <section class="subpage-row">
-        <!-- 搜索區，位於導航列下面 -->
-        <div class="subpage-search-container">
-            <div class="subpage-search-bar">
-                <input type="text" class="subpage-form-control" placeholder="搜尋商品" aria-label="搜尋商品">
-                <button class="subpage-btn" aria-label="搜尋">
-                    <img src="{% static '放大鏡.png' %}" alt="搜尋圖示" width="20" height="20">
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- 商品分類、熱門商品、AI客服區域，從左到右排列 -->
     <section class="subpage-content-container">
         <div class="subpage-row">
             <aside class="subpage-sidebar">
                 <h1>商品分類</h1>
                 <ul class="subpage-list-unstyled">
-                    <li class="subpage-category">
-                        3C
-                        <ul class="subpage-sub-list">
-                            <li>生活家電</li>
-                            <li>視聽家電</li>
-                            <li>廚房家電</li>
-                            <li>攝影器材</li>
-                            <li>手機</li>
-                            <li>電腦</li>
-                        </ul>
-                    </li>
-                    <li class="subpage-category">
-                        食品
-                        <ul class="subpage-sub-list">
-                            <li>食品</li>
-                            <li>食材</li>
-                            <li>糖果/餅乾</li>
-                            <li>保健食品</li>
-                        </ul>
-                    </li>
+                    {% for category in categories %}
+                        <li class="subpage-category">
+                            <a href="{% url 'subpage' %}?category={{ category.value }}">{{ category.name }}</a>
+                        </li>
+                    {% endfor %}
                 </ul>
             </aside>
+
             <main class="subpage-content">
-                <h1>店家LOGO</h1>
-                <div class="subpage-products">
-                    <!-- 商品動態加載 -->
-                </div>
+                <h2>我的關注列表</h2>
+                {% if request.session.user_email %}
+                    {% if followed_products %}
+                        <div class="subpage-products">
+                            {% for followed in followed_products %}
+                                <div class="followed-product-item">
+                                    <span class="rank">{{ forloop.counter }}</span>
+                                    <a href="{% url 'product' followed.product.id %}" class="product-link">
+                                        <img src="{{ followed.product.image_url }}" alt="{{ followed.product.name }}" class="store-logo">
+                                        <span class="product-name">{{ followed.product.name }}</span>
+                                    </a>
+                                    <div class="right-aligned">
+                                        <span class="product-price">$ {{ followed.product.price }}</span>
+                                        <a href="{{ followed.product.product_url }}" target="_blank" class="buy-btn">購買</a>
+                                        <button class="unfollow-btn follow-btn" data-product-id="{{ followed.product.id }}" title="取消關注">
+                                            <span class="heart-icon followed"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>您尚未關注任何商品。</p>
+                    {% endif %}
+                {% else %}
+                    <p>請登入以查看您的關注列表。</p>
+                    <a href="{% url 'login' %}?next={% url 'care' %}" class="buy-btn">立即登入</a>
+                {% endif %}
             </main>
-            <aside class="subpage-ai-service">
-                <h1>AI客服</h1>
-                <iframe
-                    allow="microphone;"
-                    width="100%"
-                    height="400"
-                    style="border: none; border-radius: 10px;"
-                    src="https://console.dialogflow.com/api-client/demo/embedded/0f7ba45a-cdd0-4fe3-b692-545a9dbd30bf">
-                </iframe>
-            </aside>
         </div>
     </section>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        console.log("jQuery loaded");
+
+        $('.follow-btn').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log("Follow button clicked");
+
+            var productId = $(this).data('product-id');
+            var $heart = $(this).find('.heart-icon');
+            var $button = $(this);
+
+            console.log("Product ID:", productId);
+
+            $.ajax({
+                url: '/myapp/follow_product/',
+                method: 'POST',
+                data: {
+                    'product_id': productId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    console.log("AJAX response:", response);
+                    if (response.success) {
+                        if (response.followed) {
+                            $heart.addClass('followed');
+                            $button.attr('title', '取消關注');
+                            console.log("Heart updated to red");
+                        } else {
+                            $heart.removeClass('followed');
+                            $button.attr('title', '關注商品');
+                            console.log("Heart updated to transparent");
+                            $button.closest('.followed-product-item').remove();
+                            if ($('.followed-product-item').length === 0) {
+                                $('.subpage-products').replaceWith('<p>您尚未關注任何商品。</p>');
+                            }
+                        }
+                    } else {
+                        console.log("Follow action failed:", response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", xhr.status, xhr.responseText);
+                    if (xhr.status === 401) {
+                        console.log("Unauthorized, redirecting to login");
+                        window.location.href = '/myapp/login/?next=' + encodeURIComponent(window.location.pathname);
+                    } else {
+                        alert('取消關注失敗，請稍後再試。');
+                    }
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

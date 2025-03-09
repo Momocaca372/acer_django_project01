@@ -86,10 +86,13 @@ body {
     border-radius: 4px; /* 設定按鈕圓角 */
     cursor: pointer; /* 當鼠標懸停在按鈕上時顯示為可點擊 */
     transition: background-color 0.3s; /* 讓背景顏色變化有平滑過渡效果 */
+    text-decoration: none; /* 移除下劃線 */
+    display: inline-block; /* 確保按鈕行為一致 */
 }
 
 .btn-auth:hover {
     background-color: #0056b3; /* 當鼠標懸停時改變背景顏色 */
+    text-decoration: none; /* 確保懸停時也不顯示下劃線 */
 }
 
 /* 頁尾樣式 */

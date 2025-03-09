@@ -1,11 +1,9 @@
-/* product.css */
-
-/* 整體容器 */
+/* static/product.css */
 .product-container {
     max-width: 1900px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 20px; /* 恢復與其他頁面一致的左右 padding */
 }
 
 .product-content-container {
@@ -15,21 +13,19 @@
     margin: 0 auto;
 }
 
-/* Flexbox 排列 */
 .product-row {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
     justify-content: space-between;
-    width: 1900px;
+    width: 100%; /* 保持 100% 寬度 */
     margin-top: 10px;
 }
 
-/* 商品分類側邊欄 */
 .product-sidebar {
     flex: 1 1 200px;
     max-width: 20%;
-    padding: 20px;
+    padding: 20px; /* 與 subpage.css 和 search.css 一致，恢復四邊 20px */
     background-color: transparent;
     font-size: 20px;
 }
@@ -45,21 +41,24 @@
     margin-bottom: 10px;
 }
 
+.product-category a {
+    text-decoration: none;
+    color: #333;
+}
+
 .product-category:hover {
     background-color: #f8f9fa;
 }
 
-/* 主內容區域 */
 .product-content {
     flex: 3 1 600px;
     max-width: 60%;
     padding: 20px;
     font-size: 20px;
     display: flex;
-    flex-direction: column; /* 垂直排列子元素 */
+    flex-direction: column;
 }
 
-/* 商品容器 */
 .product-image-container {
     display: flex;
     align-items: flex-start;
@@ -70,7 +69,7 @@
     border: 1px solid #ddd;
     background-color: #f9f9f9;
     flex-wrap: wrap;
-    box-sizing: border-box; /* 確保 padding 不影響高度 */
+    box-sizing: border-box;
 }
 
 .product-img {
@@ -94,7 +93,6 @@
     color: #ff0000;
 }
 
-/* 關注按鈕 */
 .follow-btn-container {
     width: 100%;
     display: flex;
@@ -103,37 +101,47 @@
 }
 
 .follow-btn {
-    background: #008CBA;
-    color: white;
+    background: none;
     border: none;
-    padding: 10px 35px;
-    border-radius: 5px;
     cursor: pointer;
-    margin-top: 10px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
 }
 
-.follow-btn:hover {
-    background: #0073a6;
+.follow-btn:hover .heart-icon:not(.followed) {
+    opacity: 0.7;
 }
 
-/* 搜索區 */
+.heart-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.72-8.72a5.5 5.5 0 0 0 0-7.78z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
+.heart-icon.followed {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="red"><path d="M12 21.23l-8.72-8.72a5.5 5.5 0 0 1 0-7.78 5.5 5.5 0 0 1 7.78 0L12 5.67l1.06-1.06a5.5 5.5 0 0 1 7.78 0 5.5 5.5 0 0 1 0 7.78L12 21.23z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
 .product-search-container {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    width: 1900px;
+    width: 100%;
     margin: 0 auto;
     padding: 0 20px;
 }
 
-/* 搜索框區域 */
 .product-search-bar {
     display: flex;
     width: 100%;
     max-width: 800px;
-    margin-left: 400px; /* 移除左邊距 */
-    gap: 10px; /* 增加元素間距 */
-    justify-content: flex-start; /* 改為靠左對齊 */
+    margin-left: 400px;
+    gap: 10px;
+    justify-content: flex-start;
     align-items: center;
 }
 
@@ -162,14 +170,13 @@
     left: -4px;
 }
 
-/* 熱門搜尋標籤 */
 .product-search-tag {
-    display: flex; /* 使用 Flexbox */
-    align-items: center; /* 垂直置中 */
-    margin-bottom: 20px; /* 下邊距 */
-    margin-top: 10px; /* 上邊距 */
-    margin-left: 400px; /* 移除左邊距 */
-    justify-content: flex-start; /* 確保內容靠左對齊 */
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    margin-left: 400px;
+    justify-content: flex-start;
 }
 
 .product-search-label {
@@ -199,7 +206,6 @@
     color: white;
 }
 
-/* 相關商品 */
 .related-products {
     flex: 1 1 200px;
     max-width: 20%;
@@ -260,11 +266,10 @@
     width: 100%;
 }
 
-/* 店家價格 */
 .store-pricing {
     margin-top: 20px;
     width: 100%;
-    max-width: 900px; /* 與 product-image-container 一致 */
+    max-width: 900px;
     box-sizing: border-box;
 }
 
@@ -323,7 +328,6 @@
     background: #e68900;
 }
 
-/* 響應式設計 */
 @media (max-width: 992px) {
     .product-sidebar, .product-content, .related-products {
         flex: 1 1 100%;

@@ -1,4 +1,4 @@
-/* styles.css */
+/* register.css */
 
 body {
     font-family: 'Arial', sans-serif;
@@ -71,6 +71,16 @@ h2 {
 
 .submit-btn:active {
     background-color: #004085;
+}
+
+p.error {
+    color: red;
+    margin: 10px 0;
+}
+
+p.success {
+    color: green;
+    margin: 10px 0;
 }
 
 @media (max-width: 480px) {

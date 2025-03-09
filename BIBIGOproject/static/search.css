@@ -1,4 +1,4 @@
-/* 設定整體容器樣式 */
+/* search.css */
 .subpage-container {
     max-width: 1900px;
     width: 100%;
@@ -12,7 +12,6 @@
     margin: 0 auto;
 }
 
-/* 設定主要區塊的排列方式 */
 .subpage-row {
     display: flex;
     flex-wrap: wrap;
@@ -21,7 +20,6 @@
     margin-top: 10px;
 }
 
-/* 商品分類側邊欄 */
 .subpage-sidebar {
     flex: 1 1 200px;
     max-width: 20%;
@@ -30,20 +28,26 @@
     font-size: 20px;
 }
 
-/* 去除父分類的圓點 */
 .subpage-list-unstyled {
     list-style-type: none;
     padding-left: 0;
     margin-top: 5px;
 }
 
-/* 去除子分類的圓點 */
-.subpage-sub-list {
-    list-style-type: none;
-    padding-left: 20px;
+.subpage-category {
+    cursor: pointer;
+    margin-bottom: 10px;
 }
 
-/* 主內容區域 */
+.subpage-category a {
+    text-decoration: none;
+    color: #333;
+}
+
+.subpage-category:hover {
+    background-color: #f8f9fa;
+}
+
 .subpage-content {
     flex: 2 1 600px;
     max-width: 60%;
@@ -51,7 +55,6 @@
     font-size: 20px;
 }
 
-/* AI 客服區塊 */
 .subpage-ai-service {
     font-size: 20px;
     flex: 1 1 200px;
@@ -65,7 +68,6 @@
     width: 100%;
 }
 
-/* 搜索框區域 */
 .subpage-search-bar {
     display: flex;
     width: 100%;
@@ -76,7 +78,6 @@
     align-items: center;
 }
 
-/* 搜索框內的輸入框 */
 .subpage-search-bar input {
     font-size: 15px;
     width: auto;
@@ -88,7 +89,6 @@
     border: 1px solid #ccc;
 }
 
-/* 搜索按鈕 */
 .subpage-search-bar button {
     padding: 7px 10px;
     background-color: #007bff;
@@ -103,7 +103,6 @@
     left: -4px;
 }
 
-/* 熱門搜尋標籤 */
 .subpage-search-tag {
     display: flex;
     align-items: center;
@@ -112,7 +111,6 @@
     margin-left: 400px;
 }
 
-/* 熱門搜尋標籤標題 */
 .subpage-search-label {
     background-color: #dc3545;
     color: white;
@@ -120,7 +118,6 @@
     border-radius: 5px;
 }
 
-/* 熱門搜尋標籤的內容 */
 .subpage-tags {
     display: flex;
     flex-wrap: wrap;
@@ -128,118 +125,100 @@
     margin-left: 20px;
 }
 
-/* 單個標籤 */
 .subpage-tag {
     padding: 5px 10px;
     border: 1px solid #ccc;
     border-radius: 20px;
     text-decoration: none;
     color: #333;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* 標籤懸停效果 */
 .subpage-tag:hover {
     background-color: #007bff;
     color: white;
 }
 
-/* 商品分類區塊 */
-.subpage-category {
-    cursor: pointer;
-    margin-bottom: 10px;
-}
-
-/* 商品分類的子列表（預設隱藏） */
-.subpage-sub-list {
-    display: none;
-    margin-left: 20px;
-}
-
-/* 分類展開時顯示子列表 */
-.subpage-category.active .subpage-sub-list {
-    display: block;
-}
-
-/* 分類懸停效果 */
-.subpage-category:hover {
-    background-color: #f8f9fa;
-}
-
-/* 搜尋結果容器 */
 .subpage-products {
-    padding: 20px;
-}
-
-/* 網格佈局 */
-.product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(4, 1fr); /* 每行 4 個商品，與 subpage 一致 */
     gap: 20px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
+    justify-content: center;
 }
 
-/* 單個商品項目 */
 .subpage-product-item {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    padding: 15px;
+    display: block;
+    width: 200px;
     text-align: center;
+    padding: 10px;
+    background-color: #f8f9fa;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
 }
 
-/* 商品項目作為連結 */
-.subpage-product-item a {
+.subpage-product-item:hover {
+    transform: scale(1.05);
+    background-color: #e9ecef;
+}
+
+.subpage-product-item img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+.subpage-product-item p {
+    margin: 10px 0 5px;
+    font-size: 16px;
+    color: #333;
+}
+
+.price-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0 5px;
+}
+
+.product-price {
+    font-weight: bold;
+    color: #dc3545;
+    text-align: left; /* 價格靠左 */
+}
+
+.follow-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.heart-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.72-8.72a5.5 5.5 0 0 0 0-7.78z"/></svg>') no-repeat center;
+    background-size: contain;
+    transition: all 0.3s ease;
+}
+
+.heart-icon.followed {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="red"><path d="M12 21.23l-8.72-8.72a5.5 5.5 0 0 1 0-7.78 5.5 5.5 0 0 1 7.78 0L12 5.67l1.06-1.06a5.5 5.5 0 0 1 7.78 0 5.5 5.5 0 0 1 0 7.78L12 21.23z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
+.product-link {
     text-decoration: none;
     color: inherit;
     display: block;
 }
 
-/* 商品項目懸停效果 */
-.subpage-product-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* 商品圖片 */
-.product-image {
-    width: 100%;
-    max-width: 180px;
-    height: auto;
-    border-radius: 8px;
-    margin-bottom: 10px;
-}
-
-/* 商品名稱 */
-.product-name {
-    width: 100%;
-    max-width: 220px;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-wrap: break-word;
-    line-height: 1.4;
-    font-size: 16px;
-    color: #333;
-    margin: 5px 0;
-    text-align: left; /* 左對齊 */
-}
-
-/* 商品價格 */
-.subpage-product-item p:nth-child(3) {
-    font-weight: bold;
-    color: #dc3545;
-    font-size: 16px;
-    margin: 5px 0 0;
-}
-
-/* AI 客服區塊內的 iframe */
 .subpage-ai-service iframe {
     width: 100%;
     height: 400px;
@@ -247,7 +226,6 @@
     border: none;
 }
 
-/* 響應式設計 */
 @media (max-width: 992px) {
     .subpage-sidebar, .subpage-content, .subpage-ai-service {
         max-width: 100%;
@@ -275,8 +253,7 @@
         margin-top: 10px;
     }
 
-    .product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 15px;
+    .subpage-products {
+        grid-template-columns: repeat(2, 1fr); /* 小螢幕時每行 2 個，與 subpage 一致 */
     }
 }

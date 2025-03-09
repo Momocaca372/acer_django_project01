@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% load static %}
 
 {% block extra_styles %}
@@ -9,7 +8,7 @@
 {% block content %}
 <div class="subpage-container">
     <section class="subpage-row">
-        <!-- 搜索區，位於導航列下面 -->
+        <!-- 搜索區 -->
         <div class="subpage-search-container">
             <div class="subpage-search-bar">
                 <form method="get" action="{% url 'search' %}">
@@ -22,10 +21,9 @@
             <div class="subpage-search-tag">
                 <p class="subpage-search-label">熱門搜尋</p>
                 <div class="subpage-tags">
-                    <a href="{% url 'search' %}?q=筆電" class="subpage-tag">筆電</a>
-                    <a href="{% url 'search' %}?q=手機" class="subpage-tag">手機</a>
-                    <a href="{% url 'search' %}?q=電腦" class="subpage-tag">電腦</a>
-                    <a href="{% url 'search' %}?q=相機" class="subpage-tag">相機</a>
+                    {% for tag in hot_tags %}
+                        <a href="{% url 'search' %}?q={{ tag.name }}" class="subpage-tag">{{ tag.name|truncatechars:10 }}</a>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -37,46 +35,35 @@
             <aside class="subpage-sidebar">
                 <h1>商品分類</h1>
                 <ul class="subpage-list-unstyled">
-                    <li class="subpage-category">
-                        3C
-                        <ul class="subpage-sub-list">
-                            <li>生活家電</li>
-                            <li>視聽家電</li>
-                            <li>廚房家電</li>
-                            <li>攝影器材</li>
-                            <li>手機</li>
-                            <li>電腦</li>
-                        </ul>
-                    </li>
-                    <li class="subpage-category">
-                        食品
-                        <ul class="subpage-sub-list">
-                            <li>食品</li>
-                            <li>食材</li>
-                            <li>糖果/餅乾</li>
-                            <li>保健食品</li>
-                        </ul>
-                    </li>
+                    {% for category in categories %}
+                        <li class="subpage-category">
+                            <a href="{% url 'subpage' %}?category={{ category.value }}">{{ category.name }}</a>
+                        </li>
+                    {% endfor %}
                 </ul>
             </aside>
             <main class="subpage-content">
-                <div class="subpage-products">
+                <div class="subpage-products" id="product-list">
                     {% if products %}
-                        <ul class="product-grid">
-                            {% for product in products %}
-                                <li class="subpage-product-item">
-                                    <a href="{% url 'product' product.id %}">
-                                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-image">
-                                        <p class="product-name">{{ product.name }}</p>
-                                        <p>$ {{ product.price }}</p>
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                        {% for product in products %}
+                            <div class="subpage-product-item">
+                                <a href="{% url 'product' product.id %}" class="product-link">
+                                    <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width: 100px;">
+                                    <p>{{ product.name }}</p>
+                                    <p class="price-container">
+                                        <span class="product-price">$ {{ product.price_int }}</span>
+                                        <button class="follow-btn" data-product-id="{{ product.id }}" title="{% if product.is_followed %}取消關注{% else %}關注商品{% endif %}">
+                                            <span class="heart-icon {% if product.is_followed %}followed{% endif %}"></span>
+                                        </button>
+                                    </p>
+                                </a>
+                            </div>
+                        {% endfor %}
                     {% else %}
                         <p>未找到相關商品。</p>
                     {% endif %}
                 </div>
+                <div id="loading" style="display: none; text-align: center; padding: 20px;">載入中...</div>
             </main>
             <aside class="subpage-ai-service">
                 <h1>AI客服</h1>
@@ -91,4 +78,93 @@
         </div>
     </section>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        let offset = 20; // 從第 21 個開始，因為初始顯示 20 個
+        let loading = false;
+        const query = '{{ query|escapejs }}'; // 從當前搜尋關鍵字獲取
+
+        // 關注/取消關注功能
+        $(document).on('click', '.follow-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var productId = $(this).data('product-id');
+            var $heart = $(this).find('.heart-icon');
+            var $button = $(this);
+
+            $.ajax({
+                url: '/myapp/follow_product/',
+                method: 'POST',
+                data: {
+                    'product_id': productId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (response.followed) {
+                            $heart.addClass('followed');
+                            $button.attr('title', '取消關注');
+                        } else {
+                            $heart.removeClass('followed');
+                            $button.attr('title', '關注商品');
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401) {
+                        window.location.href = '/myapp/login/?next=' + encodeURIComponent(window.location.pathname);
+                    } else {
+                        alert('操作失敗，請稍後再試。');
+                    }
+                }
+            });
+        });
+
+        // 載入更多功能
+        $(window).scroll(function() {
+            if ($(window).scrollTop() + $(window).height() > $(document).height() - 100 && !loading) {
+                loading = true;
+                $('#loading').show();
+
+                $.ajax({
+                    url: '{% url "load_more_products" %}',
+                    data: {
+                        'offset': offset,
+                        'query': query
+                    },
+                    success: function(response) {
+                        const products = response.products;
+                        if (products.length > 0) {
+                            products.forEach(function(product) {
+                                const productHtml = `
+                                    <div class="subpage-product-item">
+                                        <a href="/myapp/product/${product.id}/" class="product-link">
+                                            <img src="${product.image_url}" alt="${product.name}" style="max-width: 100px;">
+                                            <p>${product.name}</p>
+                                            <p class="price-container">
+                                                <span class="product-price">$ ${product.price}</span>
+                                                <button class="follow-btn" data-product-id="${product.id}" title="${product.is_followed ? '取消關注' : '關注商品'}">
+                                                    <span class="heart-icon ${product.is_followed ? 'followed' : ''}"></span>
+                                                </button>
+                                            </p>
+                                        </a>
+                                    </div>`;
+                                $('#product-list').append(productHtml);
+                            });
+                            offset += 20;
+                        }
+                        $('#loading').hide();
+                        loading = false;
+                    },
+                    error: function() {
+                        $('#loading').hide();
+                        loading = false;
+                    }
+                });
+            }
+        });
+    });
+</script>
 {% endblock %}

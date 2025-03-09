@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{% static 'hot.css' %}">
     <link rel="stylesheet" href="{% static 'care.css' %}">
     <link rel="stylesheet" href="{% static 'product.css' %}">
+    <link rel="stylesheet" href="{% static 'cat.css' %}">
     {% endblock %}
     <title>bibigo</title>
 </head>
@@ -28,8 +29,8 @@
             <!-- 導航列 -->
             <nav class="nav">
                 <ul class="nav-links">
-                    <li><a href="#">熱門商品</a></li>
-                    <li><a href="#">商品分類</a></li>
+                    <li><a href="/myapp/hot">熱門商品</a></li>
+                    <li><a href="/myapp/cat/">商品分類</a></li>
                     <li><a href="/myapp/care/">關注商品</a></li>
                 </ul>
             </nav>

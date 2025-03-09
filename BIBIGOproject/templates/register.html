@@ -6,40 +6,6 @@
     <title>註冊頁面</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'register.css' %}">
-    <style>
-        /* 小視窗樣式 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .modal-content button {
-            margin-top: 15px;
-            padding: 8px 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .modal-content button:hover {
-            background-color: #0056b3;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -51,8 +17,6 @@
         {% endif %}
         <form method="post" class="register-form" id="register-form">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{% url 'subpage' %}">
-            
             <label for="id_displayName">姓名：</label>
             <input type="text" name="displayName" id="id_displayName" placeholder="請輸入姓名" value="{{ form.displayName.value|default:'' }}" required>
             
@@ -68,32 +32,5 @@
             <button type="submit" class="submit-btn">送出</button>
         </form>
     </div>
-
-    <!-- 小視窗 -->
-    <div id="success-modal" class="modal">
-        <div class="modal-content">
-            <p id="modal-message">註冊成功</p>
-            <button onclick="redirectToSubpage()">確認</button>
-        </div>
-    </div>
-
-    <script>
-        function showSuccessModal(message) {
-            document.getElementById('modal-message').textContent = message;
-            document.getElementById('success-modal').style.display = 'flex';
-        }
-
-        function redirectToSubpage() {
-            window.location.href = "{% url 'subpage' %}";
-        }
-
-        {% if messages %}
-            {% for message in messages %}
-                {% if message.tags == 'success' %}
-                    showSuccessModal("{{ message }}");
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    </script>
 </body>
 </html>

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% load static %}
 
 {% block extra_styles %}
@@ -9,7 +8,6 @@
 {% block content %}
 <div class="subpage-container">
     <section class="subpage-row">
-        <!-- 搜索區，位於導航列下面 -->
         <div class="subpage-search-container">
             <div class="subpage-search-bar">
                 <input type="text" class="subpage-form-control" placeholder="搜尋商品" aria-label="搜尋商品">
@@ -20,48 +18,37 @@
             <div class="subpage-search-tag">
                 <p class="subpage-search-label">熱門搜尋</p>
                 <div class="subpage-tags">
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>
-                    <a href="搜尋連結.html" class="subpage-tag">筆電</a>                    
+                    {% for tag in hot_tags %}
+                        <a href="{% url 'search' %}?q={{ tag.name }}" class="subpage-tag">{{ tag.name|truncatechars:10 }}</a>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 商品分類、熱門商品、AI客服區域，從左到右排列 -->
     <section class="subpage-content-container">
         <div class="subpage-row">
             <aside class="subpage-sidebar">
                 <h1>商品分類</h1>
                 <ul class="subpage-list-unstyled">
-                    <li class="subpage-category">
-                        3C
-                        <ul class="subpage-sub-list">
-                            <li>生活家電</li>
-                            <li>視聽家電</li>
-                            <li>廚房家電</li>
-                            <li>攝影器材</li>
-                            <li>手機</li>
-                            <li>電腦</li>
-                        </ul>
-                    </li>
-                    <li class="subpage-category">
-                        食品
-                        <ul class="subpage-sub-list">
-                            <li>食品</li>
-                            <li>食材</li>
-                            <li>糖果/餅乾</li>
-                            <li>保健食品</li>
-                        </ul>
-                    </li>
+                    {% for value, name, image_path in categories %}
+                        <li class="subpage-category">
+                            <a href="{% url 'subpage' %}?category={{ value }}">{{ name }}</a>
+                        </li>
+                    {% endfor %}
                 </ul>
             </aside>
             <main class="subpage-content">
                 <h1>分類品項</h1>
                 <div class="subpage-products">
-                    <!-- 商品動態加載 -->
+                    {% for value, name, image_path in categories %}
+                        <div class="category-item">
+                            <a href="{% url 'subpage' %}?category={{ value }}">
+                                <img src="{% static image_path %}" alt="{{ name }}" class="category-image">
+                                <p>{{ name }}</p>
+                            </a>
+                        </div>
+                    {% endfor %}
                 </div>
             </main>
             <aside class="subpage-ai-service">
@@ -76,20 +63,5 @@
             </aside>
         </div>
     </section>
-    <script>
-        <!-- 展開商品分類的子列表 -->
-        document.addEventListener('DOMContentLoaded', function () {
-            const categories = document.querySelectorAll('.subpage-category');
-            categories.forEach(function (category) {
-                category.addEventListener('click', function () {
-                    category.classList.toggle('active');
-                    const subList = category.querySelector('.subpage-sub-list');
-                    if (subList) {
-                        subList.style.display = subList.style.display === 'block' ? 'none' : 'block';
-                    }
-                });
-            });
-        });
-    </script>
 </div>
 {% endblock %}
