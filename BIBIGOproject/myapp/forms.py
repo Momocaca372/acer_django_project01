@@ -2,8 +2,6 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from myapp.models import Dreamreal
-
 '''
 class LoginForm(forms.Form):
     username = forms.CharField(max_length=100)
@@ -27,11 +25,11 @@ class LoginForm(forms.Form):
 
 
 
-class DreamrealForm(forms.Form):
-    website = forms.CharField(max_length=100)
-    username = forms.CharField(max_length=100)
-    phonenumber = forms.CharField(max_length=50)
-    mail = forms.CharField(max_length=100)
+# class DreamrealForm(forms.Form):
+#     website = forms.CharField(max_length=100)
+#     username = forms.CharField(max_length=100)
+#     phonenumber = forms.CharField(max_length=50)
+#     mail = forms.CharField(max_length=100)
 
 
 # class ProfileForm(forms.Form):

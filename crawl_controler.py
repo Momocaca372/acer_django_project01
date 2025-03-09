@@ -80,8 +80,8 @@ class Crawl:
                 # 提取商品信息
                 products = soup.select('div.desc-operation-wrapper a')
                 prices = soup.find_all('div', class_='current-price')
-                img_urls = soup.select('div.box-img > a >img')
-                # img_urls = soup.find_all('img' ,class_='m_lazyload')
+                # img_urls = soup.select('div.box-img > a > img')
+                img_urls = soup.find_all('img' ,class_='m_lazyload')
                 for product, price, img_url in zip(products, prices, img_urls):
                     title = product.text
                     product_url = product.get('href')
