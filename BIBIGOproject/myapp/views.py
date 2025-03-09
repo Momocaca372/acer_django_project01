@@ -451,3 +451,6 @@ def hot(request):
         'hot_tags': hot_tags,
         'categories': categories
     })
+
+def customer_service_home(request):
+    return render(request, 'customer_service_home.html')

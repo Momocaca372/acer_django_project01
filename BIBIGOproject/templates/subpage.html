@@ -3,6 +3,24 @@
 
 {% block extra_styles %}
     <link rel="stylesheet" href="{% static 'subpage.css' %}">
+    <style>
+        /* Style for AI customer service link */
+        .ai-service-link {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .ai-service-link:hover {
+            background-color: #005bb5;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -79,6 +97,12 @@
             </aside>
         </div>
     </section>
+
+    <!-- AI客服連結 -->
+    <a href="https://console.dialogflow.com/api-client/demo/embedded/0f7ba45a-cdd0-4fe3-b692-545a9dbd30bf" class="ai-service-link" target="_blank">
+        立即聯絡客服
+    </a>
+
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -152,7 +176,7 @@
                                                 </button>
                                             </p>
                                         </a>
-                                    </div>`;
+                                    </div>`; 
                                 $('#product-list').append(productHtml);
                             });
                             offset += 20;

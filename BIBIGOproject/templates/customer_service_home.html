@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    {% load static %}
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'base.css' %}">
+    {% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'subpage.css' %}">
+    <link rel="stylesheet" href="{% static 'search.css' %}">
+    <link rel="stylesheet" href="{% static 'cat.css' %}">
+    <link rel="stylesheet" href="{% static 'hot.css' %}">
+    <link rel="stylesheet" href="{% static 'care.css' %}">
+    <link rel="stylesheet" href="{% static 'product.css' %}">
+    {% endblock %}
+    <title>bibigo</title>
+
+    <style>
+        .chat-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .input-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #user-input {
+            width: 80%;
+            font-size: 24px;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        button {
+            font-size: 24px;
+            padding: 10px 20px;
+            margin-left: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+</head>
+<body>
+    <!-- 頁首 -->
+    <header class="header">
+        <div class="container">
+            <!-- 頁面標誌 -->
+            <a href="{% url 'subpage' %}" class="logo">
+                <img src="{% static 'LOGO.jpg' %}" alt="bibigo Logo" class="logo-img">
+            </a>
+
+            <!-- 導航列 -->
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="#">熱門商品</a></li>
+                    <li><a href="#">商品分類</a></li>
+                    <li><a href="/myapp/care/">關注商品</a></li>
+                </ul>
+            </nav>
+
+            <!-- 登入註冊/登出按鈕 -->
+            <div class="auth-buttons">
+                {% if request.session.user_email %}
+                    <a href="{% url 'logout' %}" class="btn-auth">登出</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-auth">登入 | 註冊</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="main-content">
+        {% block content %}
+            <div class="chat-container">
+                <div class="chat-box" id="chat-box"></div>
+                <div class="input-area">
+                    <input type="text" id="user-input" placeholder="輸入訊息...">
+                    <button onclick="sendMessage()">送出</button>
+                </div>
+            </div>
+            <script>
+                function sendMessage() {
+                    const inputField = document.getElementById("user-input");
+                    const chatBox = document.getElementById("chat-box");
+                    const userMessage = inputField.value.trim();
+                    if (userMessage === "") return;
+                    
+                    const userBubble = `<div><strong>你:</strong> ${userMessage}</div>`;
+                    chatBox.innerHTML += userBubble;
+                    inputField.value = "";
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                    
+                    setTimeout(() => {
+                        const botResponse = `<div><strong>客服:</strong> 這是一則自動回覆。</div>`;
+                        chatBox.innerHTML += botResponse;
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }, 1000);
+                }
+            </script>
+        {% endblock %}
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="footer">
+        <p>© 2025 bibigo. 版權所有。</p>
+    </footer>
+</body>
+</html>
