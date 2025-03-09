@@ -16,5 +16,4 @@ urlpatterns = [
     path('hot/', views.hot, name='hot'),
     path('load-more-products/', views.load_more_products, name='load_more_products'),
     path('load_more_related_products/', views.load_more_related_products, name='load_more_related_products'),
-    path('customer-service/', views.customer_service_home, name='customer_service_home'),
 ]
