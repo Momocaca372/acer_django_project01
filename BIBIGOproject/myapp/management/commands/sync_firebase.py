@@ -1,7 +1,7 @@
 # myapp/management/commands/sync_firebase.py
 from django.core.management.base import BaseCommand
 from BIBIGOproject.firebase_config import firebase
-from myapp.models import Store, Category, Product, DataEntry
+from myapp.models import Store, Category, Product  # 移除 DataEntry
 from decimal import Decimal
 from django.db import transaction
 
@@ -15,11 +15,12 @@ class Command(BaseCommand):
         stores = db.child("store").get().val()
         if stores:
             for idx, store_data in enumerate(stores):
-                if store_data:  # 過濾 null
+                if store_data:
                     Store.objects.update_or_create(
                         id=str(idx),
                         defaults={'name': store_data['name']}
                     )
+            self.stdout.write(self.style.SUCCESS('Stores synced successfully'))
 
         # 同步 Category
         categories = db.child("category").get().val()
@@ -31,10 +32,13 @@ class Command(BaseCommand):
                         id=str(idx),
                         defaults={'name': cat_data['name'], 'store': store}
                     )
+            self.stdout.write(self.style.SUCCESS('Categories synced successfully'))
 
-        # 同步 Product 和 Product Detail
+        # 同步 Product（包含 product_detail 和 product_relabel）
         products = db.child("product").get().val()
         product_details = db.child("product_detail").get().val()
+        product_relabels = db.child("product_relabel").get().val()  # 獲取 product_relabel 資料
+
         if products and product_details:
             for idx, (prod_data, detail_data) in enumerate(zip(products, product_details)):
                 if prod_data and detail_data:
@@ -42,6 +46,12 @@ class Command(BaseCommand):
                     store = Store.objects.get(id=prod_data['store_id'])
                     price_str = str(detail_data['price']).replace(',', '')
                     price = Decimal(price_str)
+
+                    # 從 product_relabel 獲取 value
+                    value = None
+                    if product_relabels and idx < len(product_relabels) and product_relabels[idx] is not None:
+                        value = int(product_relabels[idx])  # 轉為整數
+
                     Product.objects.update_or_create(
                         id=str(idx),
                         defaults={
@@ -50,44 +60,10 @@ class Command(BaseCommand):
                             'img_url': detail_data['img_url'],
                             'name': detail_data['name'],
                             'price': price,
-                            'product_url': detail_data['product_url']
+                            'product_url': detail_data['product_url'],
+                            'value': value  # 新增 value 欄位
                         }
                     )
-
-        # 同步 DataEntry（假設陣列位於 "data" 路徑）
-        data_array = db.child("data").get().val()
-        if data_array:
-            # 確認索引 0 是 null
-            if data_array[0] is not None:
-                self.stdout.write(self.style.WARNING('Index 0 is not null, proceeding anyway'))
-
-            # 取得當前最大索引
-            last_entry = DataEntry.objects.order_by('-index').first()
-            last_index = last_entry.index if last_entry else -1
-
-            # 分批處理
-            batch_size = 1000
-            total_length = len(data_array)
-            new_or_updated_entries = []
-
-            for i in range(max(0, last_index + 1), total_length):
-                value = data_array[i]
-                new_or_updated_entries.append(DataEntry(index=i, value=value))
-
-                if len(new_or_updated_entries) >= batch_size:
-                    with transaction.atomic():
-                        DataEntry.objects.bulk_create(new_or_updated_entries, ignore_conflicts=False)
-                        for entry in new_or_updated_entries:
-                            DataEntry.objects.filter(index=entry.index).update(value=entry.value)
-                    self.stdout.write(self.style.SUCCESS(f'Synced {i + 1}/{total_length} DataEntry entries'))
-                    new_or_updated_entries = []
-
-            # 處理剩餘資料
-            if new_or_updated_entries:
-                with transaction.atomic():
-                    DataEntry.objects.bulk_create(new_or_updated_entries, ignore_conflicts=False)
-                    for entry in new_or_updated_entries:
-                        DataEntry.objects.filter(index=entry.index).update(value=entry.value)
-                self.stdout.write(self.style.SUCCESS(f'Synced {total_length}/{total_length} DataEntry entries'))
+            self.stdout.write(self.style.SUCCESS('Products synced successfully'))
 
         self.stdout.write(self.style.SUCCESS('成功同步 Firebase 資料到 Django 資料庫'))

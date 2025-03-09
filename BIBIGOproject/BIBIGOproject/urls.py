@@ -23,8 +23,8 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("myapp/", include('myapp.urls')),  # 連接應用層級的 urls.py
-    path("",RedirectView.as_view(url='/myapp/subpage/')), #空位址重新導向myapp
+    path("myapp/", include('myapp.urls')),  # 連接應用層級的 urls.py  
+    path("",RedirectView.as_view(url='/myapp/subpage/')) #空位址重新導向myapp
 ]
 
 # 這行只在開發模式 (DEBUG=True) 時有效，正式環境不會生效
