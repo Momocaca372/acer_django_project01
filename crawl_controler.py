@@ -157,7 +157,7 @@ class Crawl:
                 
                 # 提取分類名稱
                 try:
-                    category = soup.select('div.breadcrumb-section a')[-2].text.strip()
+                    category = soup.select('div.breadcrumb-section a')[-1].text.strip()
                 except (IndexError, AttributeError):
                     category = "未知分類"    
                 
