@@ -117,9 +117,15 @@ def extract_features(category_tokens):
     # 過濾掉 stop words
     filtered_category_tokens = filter_stop_words(category_tokens, stop_words)
     include_words = ["貓", "狗", "犬", "糧","寵物","喵","汪","毛小孩"]
-    baby_index = str(min(map(int, filtered_category_tokens.keys()))+5)
-    # 針對 [250:576] 範圍內的數據進行篩選，其他部分保持不變
-    filtered_category_tokens[baby_index] = filtered_category_tokens[baby_index][:780]
+    print(filtered_category_tokens.keys(),"\n",type(filtered_category_tokens.keys()))
+    try:
+        baby_index = str(min(map(int, filtered_category_tokens.keys()))+5)
+        # 針對 [250:576] 範圍內的數據進行篩選，其他部分保持不變
+        filtered_category_tokens[baby_index] = filtered_category_tokens[baby_index][:780]
+
+    except:
+        baby_index = min(map(int, filtered_category_tokens.keys()))+5
+        filtered_category_tokens[baby_index] = filtered_category_tokens[baby_index][:780]
     # 只對 [250:576] 區間進行篩選
     filtered_category_tokens[baby_index][250:576] = list(map(
         lambda x: x if any(word in x for word in include_words) else None,
@@ -187,59 +193,7 @@ def model_create():
     print("模組及向量表已暫存")
     return model,vectorizer
 
-if __name__ == "__main__":
-    if input("是否要使用舊數據? y/n").upper() =="Y":
-        model = joblib.load(path /"bigdata/RFC_model.pkl") #讀取模型
-        vectorizer = joblib.load(path /"bigdata/tfidf_vectorizer.pkl") #讀取向量器
-    else:
-        model,vectorizer = model_create()
-    if input("是否要使用舊dataframe? y/n").upper() =="Y": 
-        df_product = joblib.load(path /"bigdata/df_product.pkl") ##讀取Dataframe
-    else:
-        conn = sql.connect(path / SQL_path)
-        query = """
-        SELECT id, name, category_id
-        FROM myapp_product """
-        
-        df_product = pd.read_sql_query(query, conn)
-        conn.close()
-        
-        # **預處理商品名稱**
-        df_product["cleaned_name"] = df_product["name"].apply(clean_product_name)
-        df_product["tokenized_name"] = df_product["cleaned_name"].apply(tokenize)
-        X = vectorizer.transform(df_product["tokenized_name"].apply(lambda x: " ".join(x)))  
-        print("資料向量化完成 預測模型中")
-        # **批量預測**
-        df_product["predicted_category"] = model.predict(X)
-        
-        df_product["category_id"] = df_product["category_id"].astype(int)
-        df_product["predicted_category"] = df_product["predicted_category"].astype(int)
-        # 按 category_id 分組，對每組內的 predicted_category 計算眾數
-        df_product["predicted_category"] = (
-            df_product.groupby("category_id")["predicted_category"]
-            .transform(lambda x: mode(x)[0] if len(x) > 0 else 85)  # 取眾數
-        )
-        joblib.dump(df_product, path / "bigdata/df_product.pkl") # 儲存為 pkl 檔案
-    
-    
-    conn = sql.connect(path / SQL_path)
-    cursor = conn.cursor()
-    # SQL UPDATE 語法
-    query = """
-    UPDATE myapp_product 
-    SET value = ? 
-    WHERE id = ?
-    """
-    
-    # 將 DataFrame 轉換為列表
-    data = list(zip(df_product["predicted_category"], df_product["id"]))
-    
-    # 批量更新資料（避免 for 迴圈）
-    cursor.executemany(query, data)
-    
-    # 提交變更 & 關閉
-    conn.commit()
-    conn.close()
+
 
 def get_sentence_vector(model, words):
     """取得句子的平均詞向量"""
@@ -328,7 +282,65 @@ def recommand_list_generator(top_n=50):
     
     conn.close()
     
+if __name__ == "__main__":
+    if input("是否要使用生成推薦列表? y/n").upper() =="Y":
+        recommand_list_generator()
+        print("推薦列表已生成")
+    elif input("是否要使用單一相關列表? y/n").upper() =="Y":
+        similar_products = most_similar_filter(input("輸入商品名稱"),5)
+        print(similar_products)
+    elif input("是否要使用舊數據? y/n").upper() =="Y":
+        model = joblib.load(path /"bigdata/RFC_model.pkl") #讀取模型
+        vectorizer = joblib.load(path /"bigdata/tfidf_vectorizer.pkl") #讀取向量器
+    else:
+        model,vectorizer = model_create()
+    if input("是否要使用舊dataframe? y/n").upper() =="Y": 
+        df_product = joblib.load(path /"bigdata/df_product.pkl") ##讀取Dataframe
+    else:
+        conn = sql.connect(path / SQL_path)
+        query = """
+        SELECT id, name, category_id
+        FROM myapp_product """
+        
+        df_product = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        # **預處理商品名稱**
+        df_product["cleaned_name"] = df_product["name"].apply(clean_product_name)
+        df_product["tokenized_name"] = df_product["cleaned_name"].apply(tokenize)
+        X = vectorizer.transform(df_product["tokenized_name"].apply(lambda x: " ".join(x)))  
+        print("資料向量化完成 預測模型中")
+        # **批量預測**
+        df_product["predicted_category"] = model.predict(X)
+        
+        df_product["category_id"] = df_product["category_id"].astype(int)
+        df_product["predicted_category"] = df_product["predicted_category"].astype(int)
+        # 按 category_id 分組，對每組內的 predicted_category 計算眾數
+        df_product["predicted_category"] = (
+            df_product.groupby("category_id")["predicted_category"]
+            .transform(lambda x: mode(x)[0] if len(x) > 0 else 85)  # 取眾數
+        )
+        joblib.dump(df_product, path / "bigdata/df_product.pkl") # 儲存為 pkl 檔案
     
+    
+    conn = sql.connect(path / SQL_path)
+    cursor = conn.cursor()
+    # SQL UPDATE 語法
+    query = """
+    UPDATE myapp_product 
+    SET value = ? 
+    WHERE id = ?
+    """
+    
+    # 將 DataFrame 轉換為列表
+    data = list(zip(df_product["predicted_category"], df_product["id"]))
+    
+    # 批量更新資料（避免 for 迴圈）
+    cursor.executemany(query, data)
+    
+    # 提交變更 & 關閉
+    conn.commit()
+    conn.close() 
     
     
     
