@@ -8,12 +8,12 @@ import nltk
 import joblib
 import sqlite3 as sql
 import numpy as np
-
 from gensim.models import Word2Vec
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from scipy.stats import mode
 from sklearn.metrics.pairwise import cosine_similarity
+
 
 
 """
