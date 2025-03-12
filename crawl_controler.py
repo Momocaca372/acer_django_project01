@@ -9,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.common.keys import Keys
 from time import sleep
 from tqdm import tqdm
-import re
 from urllib.parse import urlparse, parse_qs, urlencode, urljoin
 import ssl
 import time
