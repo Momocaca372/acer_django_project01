@@ -9,13 +9,15 @@ from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.common.keys import Keys
 from time import sleep
 from tqdm import tqdm
-import re
 from urllib.parse import urlparse, parse_qs, urlencode, urljoin
 import ssl
 import time
 from requests.adapters import HTTPAdapter
 from urllib3.poolmanager import PoolManager
 from selenium.webdriver.chrome.service import Service
+
+import save_to_db , savepkl , re_category
+
 # 設置 headers，模擬瀏覽器行為，防止請求被拒絕
 class SSLAdapter(HTTPAdapter):
     """自訂 SSL 適配器，允許較舊的加密方式。"""
@@ -207,111 +209,77 @@ class Crawl:
         return all_products
     @classmethod
     def savesafe(cls):
-        url = 'https://www.savesafe.com.tw/'
-
-        # 取得分類頁面 URL
-        def get_urls(drv, url):
-            drv.get(url)
-            time.sleep(3)
-            lst = []
-            for a in drv.find_elements(By.CSS_SELECTOR, 'ul.ThirdNavItemList li a'):
-                href = a.get_attribute('href')
+        def get_titlelist(base_url):
+            titlelist=[]
+            driver = webdriver.Chrome(options=cls.chrome_options)
+            driver.get(base_url)
+            driver.implicitly_wait(10)
+            soup =BeautifulSoup(driver.page_source,"html.parser")
+            driver.quit()
+            titles = soup.select('ul.ThirdNavItemList>li>a')
+            for title in titles:
+                href = title.get('href')
                 if href:
-                    lst.append(href)
-            for a in drv.find_elements(By.CSS_SELECTOR, 'a.pl-3'):
-                href = a.get_attribute('href')
-                if href and 'ProductList?t_s_id=' in href:
-                    lst.append(urljoin(url, href))
-            return list(set(lst))  # 去除重複
+                    titlelist.append(href)
+            return titlelist
 
-        # 修改 URL 加上分頁參數
-        def add_page(u, p):
-            parts = urlparse(u)
-            qs = parse_qs(parts.query)
-            qs["s"] = ["6"]
-            qs["Pg"] = [str(p)]
-            return f"{parts.scheme}://{parts.netloc}{parts.path}?{urlencode(qs, doseq=True)}"
-
-        # 解析頁面資訊：取得目前頁碼與總頁數
-        def get_page_info(soup):
-            sp = soup.select_one('span.m-0.text-black-50')
-            if not sp:
-                return None, None
+        def get_category_items(nav_url):
+            web_page = 1 
+            product_list = []
+            category=""
             try:
-                tot = int(sp.get_text(strip=True).replace('/', '').strip())
-            except ValueError:
-                return None, None
-            par = sp.find_parent('p')
-            for item in par.contents:
-                if isinstance(item, str) and item.strip().isdigit():
-                    return int(item.strip()), tot
-            return None, None
-
-        # 從商品卡片中提取資料，直接加入 items 列表
-        def add_items(soup, url, cat):
-            nonlocal items
-            for card in soup.select('div.NewActivityItem'):
-                a_tag = card.select_one('a.text-center')
-                p_url = urljoin(url, a_tag.get('href')) if a_tag else ''
-                img_tag = a_tag.find('img', class_='card-img-top') if a_tag else None
-                img = urljoin(url, img_tag['src']) if img_tag and img_tag.get('src') else ''
-                title = card.select_one('p.ObjectName').get_text(strip=True) if card.select_one('p.ObjectName') else ''
-                price = card.select_one('span.Price').get_text(strip=True) if card.select_one('span.Price') else ''
-                items.append({
-                    'name': title,
-                    'price': price,
-                    'img_url': img,
-                    'product_url': p_url,
-                    'category': cat,
-                    'store': 'savesafe'
-                })
-
-        opts = cls.chrome_options
-        serv = Service()  # 不傳遞 driver_path 參數
-        drv = webdriver.Chrome(service=serv, options=opts)
-
-        try:
-            url_list = get_urls(drv, url)
-        finally:
-            drv.quit()
-
-        print(f"共收集 {len(url_list)} 個分類頁面")
-
-        session = requests.Session()
-        session.mount('https://', SSLAdapter())
-        headers = cls.my_headers  # 使用類別層級的 headers
-        items = []
-
-        for u in url_list:
-            print(f"開始抓取分類頁面：{u}")
-            p = 1
-            cat = '未知分類'
-            while True:
-                pu = add_page(u, p)
-                print(f"抓取頁面：{pu}")
-                try:
-                    r = session.get(pu, headers=headers, timeout=10)
-                    r.raise_for_status()
-                    soup = BeautifulSoup(r.text, "html.parser")
-                except requests.RequestException as e:
-                    print(f"請求錯誤：{e}")
-                    break
-
-                cur, tot = get_page_info(soup)
-                if cur is None or tot is None:
-                    print("無法解析分頁資訊，停止翻頁")
-                    break
-                print(f"分頁資訊：目前 {cur} / 總 {tot}")
-
-                add_items(soup, url, cat)
-                print(f"累計抓取 {len(items)} 筆資料")
-
-                if cur >= tot:
-                    print(f"已到最後一頁（{cur}/{tot}）")
-                    break
-                p += 1
-
-        return items
+                while True:
+                    session = requests.Session()
+                    session.mount('https://', SSLAdapter())
+                    response = session.get(f"{base_url:s}{nav_url:s}&Pg={web_page:d}", headers=cls.my_headers, timeout=10)  # 增加 timeout 避免卡住
+                    response.raise_for_status()
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    breadcrumb_links = soup.select('li.breadcrumb-item a')
+                    if not breadcrumb_links:
+                        break
+                    category = breadcrumb_links[-1].get_text(strip=True)
+            
+                    product_cards = soup.select('div.NewActivityItem')
+                    for card in product_cards:
+                        link_tag = card.select_one('a.text-center')
+                        product_url = link_tag.get('href')
+                        img_tag = link_tag.find('img', class_='card-img-top')
+                        image_url = img_tag['src']
+            
+                        name_tag = card.select_one('p.ObjectName')
+                        name = name_tag.get_text(strip=True)
+            
+                        price_tag = card.select_one('span.Price')
+                        price = price_tag.get_text(strip=True)
+            
+                        product_list.append({
+                            'name': name,
+                            'price': price,
+                            'img_url': image_url,
+                            'product_url': product_url,
+                            'category': category,
+                            'store': 'savesafe'
+                        })
+                        web_page+=1
+                session.close()
+            except:
+                #print("伺服器拒絕") #可由此項檢查伺服器是否拒絕
+                time.sleep(3)
+                get_category_items(nav_url)
+             #可由此項檢查抓取的分類是否有問題
+            #else:
+                #category_n = category if category else nav_url
+                #print(f"{category_n} :已抓取 {len(product_list)} 筆資料")
+            return product_list
+        base_url = 'https://www.savesafe.com.tw/'    
+        titlelist = get_titlelist(base_url)
+        print("titlelist Done")
+        # 不能用多線程，伺服器會拒絕
+        product_list = []
+        for title in tqdm(titlelist, desc="Processing categories"):
+            for item in get_category_items(title):
+                product_list.append(item)
+        return product_list
     @classmethod
     def poyabuy(cls):
         # 宣告參數
@@ -429,3 +397,15 @@ class Crawl:
                     product_data.extend(filter(None, result))
                 
         return product_data
+
+if __name__ == '__main__':
+    all_products = (
+        Crawl.carrefour() 
+        + Crawl.costco() 
+        + Crawl.poyabuy()
+        + Crawl.savesafe()
+        ) # 從爬蟲控制器獲取商品資料
+    with open("product.json", "w", encoding="utf-8") as f:
+        savepkl.json.dump(all_products, f, indent=4, ensure_ascii=False)  # 將商品暫存為 JSON 檔案
+    save_to_db.save_to_db(all_products)  # 將商品存入資料庫
+    re_category.re_category() # 更新商品分類

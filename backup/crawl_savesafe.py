@@ -4,9 +4,9 @@ from requests.adapters import HTTPAdapter
 from urllib3.poolmanager import PoolManager
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-import time
+from tqdm import tqdm
+import time 
+import json
 
 # 自定義的 SSL Adapter，降低安全等級以允許較小的 DH 金鑰
 class SSLAdapter(HTTPAdapter):
@@ -21,87 +21,93 @@ class SSLAdapter(HTTPAdapter):
         )
 
 
-def saveself(driver_path=None):
-    base_url = 'https://www.savesafe.com.tw/'
-    titlelist = []
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    driver_service = Service(driver_path) if driver_path else Service()
-    driver = webdriver.Chrome(service=driver_service, options=options)
-    
-    session = requests.Session()
-    session.mount('https://', SSLAdapter())
+#def saveself(driver_path=None):
+base_url = 'https://www.savesafe.com.tw/'
+headers = {
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+}
 
-    headers = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-    }
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--enable-unsafe-swiftshader")   
 
+
+
+
+def get_titlelist(base_url=base_url):
+    titlelist=[]
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get(base_url)
+    driver.implicitly_wait(10)
+    soup =BeautifulSoup(driver.page_source,"html.parser")
+    driver.quit()
+    titles = soup.select('ul.ThirdNavItemList>li>a')
+    for title in titles:
+        href = title.get('href')
+        if href:
+            titlelist.append(href)
+    return titlelist
+
+def get_category_items(nav_url):
+    web_page = 1 
+    product_list = []
+    category=""
     try:
-        driver.get(base_url)
-        time.sleep(3)
-        titles = driver.find_elements(By.CSS_SELECTOR, 'ul.ThirdNavItemList li a')
-        for title in titles:
-            href = title.get_attribute('href')
-            if href:
-                titlelist.append(href)
-    finally:
-        driver.quit()
-
-    all_products = []
-    for nav_url in titlelist:
-        print(f"開始抓取分類頁面：{nav_url}")
-        url = nav_url
-        while url:
-            try:
-                response = session.get(url, headers=headers, timeout=10)  # 增加 timeout 避免卡住
-                response.raise_for_status()
-                soup = BeautifulSoup(response.text, "html.parser")
-
-                breadcrumb_links = soup.select('li.breadcrumb-item a')
-                category = breadcrumb_links[-1].get_text(strip=True) if breadcrumb_links else '未知分類'
-
-                product_cards = soup.select('div.NewActivityItem')
-                for card in product_cards:
-                    link_tag = card.select_one('a.text-center')
-                    if link_tag:
-                        product_url = link_tag.get('href')
-                        img_tag = link_tag.find('img', class_='card-img-top')
-                        image_url = img_tag['src'] if img_tag and img_tag.has_attr('src') else ''
-                    else:
-                        product_url = ''
-                        image_url = ''
-
-                    name_tag = card.select_one('p.ObjectName')
-                    name = name_tag.get_text(strip=True) if name_tag else ''
-
-                    price_tag = card.select_one('span.Price')
-                    price = price_tag.get_text(strip=True) if price_tag else ''
-
-                    all_products.append({
-                        'name': name,
-                        'price': price,
-                        'img_url': image_url,
-                        'product_url': product_url if product_url else '',
-                        'category': category,
-                        'store': 'savesafe'
-                    })
-
-                    if len(all_products) % 10 == 0:
-                        print(f"已抓取 {len(all_products)} 筆資料")
-
-                next_page_tag = soup.select_one('a.page-link[aria-label="Next"]')
-                if next_page_tag and 'href' in next_page_tag.attrs:
-                    url = base_url + next_page_tag['href']
-                else:
-                    break
-
-            except requests.exceptions.RequestException as e:
-                print(f"請求錯誤（{url}）：{e}")
+        while True:
+            session = requests.Session()
+            session.mount('https://', SSLAdapter())
+            response = session.get(f"{base_url:s}{nav_url:s}&Pg={web_page:d}", headers=headers, timeout=10)  # 增加 timeout 避免卡住
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+            breadcrumb_links = soup.select('li.breadcrumb-item a')
+            if not breadcrumb_links:
                 break
+            category = breadcrumb_links[-1].get_text(strip=True)
+    
+            product_cards = soup.select('div.NewActivityItem')
+            for card in product_cards:
+                link_tag = card.select_one('a.text-center')
+                product_url = link_tag.get('href')
+                img_tag = link_tag.find('img', class_='card-img-top')
+                image_url = img_tag['src']
+    
+                name_tag = card.select_one('p.ObjectName')
+                name = name_tag.get_text(strip=True)
+    
+                price_tag = card.select_one('span.Price')
+                price = price_tag.get_text(strip=True)
+    
+                product_list.append({
+                    'name': name,
+                    'price': price,
+                    'img_url': image_url,
+                    'product_url': product_url,
+                    'category': category,
+                    'store': 'savesafe'
+                })
+                web_page+=1
+        session.close()
+    except:
+        print("伺服器守備")
+        time.sleep(3)
+        get_category_items(nav_url)
+    #else:
+        #category_n = category if category else nav_url
+        #print(f"{category_n} :已抓取 {len(product_list)} 筆資料")
+    return product_list
 
-    return all_products
+titlelist = get_titlelist()
+seen = set()
+product_list=[]  
+for title in tqdm(titlelist):
+    for item in get_category_items(title):
+        if item["name"] not in seen:  # 檢查是否已存在
+            seen.add(item["name"])  # 加入已見集合
+            product_list.append(item)  # 加入結果列表
+with open("product_save.json", "w", encoding="utf-8") as f:
+    json.dump(product_list, f, indent=4, ensure_ascii=False)    
 
-
-
-# 只需直接呼叫 saveself() 即可運行
-a = saveself()  # 不需要再指定變數來儲存返回值
