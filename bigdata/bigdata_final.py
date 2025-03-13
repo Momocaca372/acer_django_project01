@@ -1,9 +1,7 @@
-import math
 import pathlib
 import pandas as pd
 import jieba
 import re
-import itertools
 import nltk
 import joblib
 import sqlite3 as sql
@@ -31,54 +29,18 @@ config = {
 }
 path = pathlib.Path(__file__).parent.parent
 
-# 定義正則表達式(12, @2,60ml,50mlx6)
-pattern = re.compile(r"^(?:\d+|\W+|\d+[a-zA-Z]+|\d+\W*\d*[a-zA-Z]*|\s+)$")
 
 
-
-# 計算熵的函數
-def calculate_entropy(token, category_tokens):
-    # 計算 token 在每個 category 中出現的頻率
-    category_counts = {cat: 0 for cat in category_tokens}
-    
-    for cat, tokens in category_tokens.items():
-        category_counts[cat] = tokens.count(token)
-    
-        # 計算 token 在各類別中出現的概率
-    total_count = sum(category_counts.values())
-    
-    # 確保總和大於 0，否則設為 0
-    if total_count > 0:
-        probabilities = [count / total_count for count in category_counts.values()]
-    else:
-        probabilities = [0 for _ in category_counts.values()]
-    # 計算熵
-    entropy = -sum(p * math.log2(p) for p in probabilities if p > 0)
-    return entropy
-
-# 計算每個 token 的熵
-def calculate_token_entropy(category_tokens):
-    token_entropy = {}
-    all_tokens = set(itertools.chain.from_iterable(itertools.chain.from_iterable(category_tokens.values())))
-    
-    for token in all_tokens:
-       token_entropy[token] =  calculate_entropy(token, category_tokens)
-    
-    return token_entropy
-
-# 設置熵的閾值來識別 stop words
-def create_stop_words(token_entropy, threshold=1.0):
-    return {token for token, entropy in token_entropy.items() if entropy > threshold}
-
-# 去除 stop words
-def filter_stop_words(category_tokens, stop_words):
-    filtered_category_tokens = {
-        cat: [token for token in tokens if token not in stop_words]
-        for cat, tokens in category_tokens.items()
-    }
-    return filtered_category_tokens
 
 def clean_product_name(text):
+    """清理商品名稱
+
+    Args:
+        text (String): 商品名稱
+
+    Returns:
+        String: 回傳清理後的商品名稱
+    """
     # 定義需要刪除的單位
     units = ["g","kg", "克拉","毫升", "K", "尺", "呎","組","公升", "入","包入","入組","公分","袋入"
              "斤","公斤", "公克", "g", "ml", "L", "盒", "包", "瓶", "顆", "件"]
@@ -89,15 +51,38 @@ def clean_product_name(text):
     text = re.sub(r"\s+", " ", text).strip()  # 移除多餘空格
     return text
 
-# 中文分詞（使用 jieba），英文分詞（使用 nltk）
 def tokenize(text):
+    """
+    中文分詞（使用 jieba），英文分詞（使用 nltk）
+
+    Args:
+        text (String): 輸入字串
+
+    Returns:
+        String: 回傳斷詞後的字串 
+    """
+    
+    
     if any('\u4e00' <= char <= '\u9fff' for char in text):  # 檢查是否有中文
         return jieba.lcut(text)  # 中文用 jieba
     else:
         return nltk.word_tokenize(text)  # 英文用 nltk 
 
-
 def data_preprocessing(df_product):
+    """資料前處理
+
+    Args:
+        df_product (DataFrame): 商品資料
+
+    Returns:
+        df_product (DataFrame): 處理後商品資料
+    """
+    def filter_tokens(tokens, regex):
+        return [token for token in tokens if not regex.match(token)]
+
+    # 定義需要刪除的字元
+    pattern = re.compile(r"^(?:\d+|\W+|\d+[a-zA-Z]+|\d+\W*\d*[a-zA-Z]*|\s+)$")
+    # Token過濾表
     filter_all =set(["x","kirkland","適用","件裝","尋找","入組",
                      "signature","精選濾","精選","配方","毫克","口味","均衡",
                      "加強","one","a","day","漢方","海洋","組合","科克","蘭",
@@ -111,29 +96,16 @@ def data_preprocessing(df_product):
                      '每包', '約', '306', '克'
                      ])
 
+    # 商品名稱清理與斷詞
     df_product.name = df_product.name.apply(lambda x:clean_product_name(x)) 
     df_product['tokens'] = df_product['name'].apply(tokenize)
+    
     # 應用過濾條件
+    df_product['tokens'] = df_product['tokens'].apply(lambda x: filter_tokens(x, pattern))
     df_product['tokens'] = df_product['tokens'].apply(
         lambda tokens: [token for token in tokens if token not in filter_all]
     )
-
     return df_product
-
-def create_Word2Vec():
-    conn = sql.connect(path / SQL_path)
-    query = """
-    SELECT id,name
-    FROM myapp_product """
-    
-    df_product = pd.read_sql_query(query, conn)
-    conn.close()
-    df_product = data_preprocessing(df_product)
-    #給預測及推薦功能使用
-    W_vectorizer = Word2Vec(sentences=list(df_product.tokens), vector_size=100, window=5, min_count=1, workers=4)
-    W_vectorizer.save( str(path / "bigdata/Word2Vec.pkl"))    
-    joblib.dump(df_product, path / "bigdata/df_product.pkl")
-
 
 def get_sentence_vector(model, words=""):
     """取得句子的平均詞向量"""
@@ -141,6 +113,7 @@ def get_sentence_vector(model, words=""):
     if len(word_vectors) == 0:
         return np.zeros(model.vector_size)  # 若沒有詞向量，回傳零向量
     return np.mean(word_vectors, axis=0)  # 取平均向量
+
 
 def find_similar_products(model, vector, df_product, top_n=5):
     """
@@ -162,6 +135,27 @@ def find_similar_products(model, vector, df_product, top_n=5):
     top_products = df_product.sort_values(by="similarity", ascending=False).head(top_n)
 
     return top_products[["id","name", "similarity"]]  # 回傳商品名稱與相似度
+
+def create_Word2Vec():
+    """
+    創建 word2vec向量器與全站商品向量DataFrame
+    """
+    # 連接資料庫，讀取商品資料
+    conn = sql.connect(path / SQL_path)
+    query = """
+    SELECT id,name
+    FROM myapp_product """
+    
+    df_product = pd.read_sql_query(query, conn)
+    conn.close()
+    # 資料前處理
+    df_product = data_preprocessing(df_product)
+    # 創建 Word2Vec 模型
+    W_vectorizer = Word2Vec(sentences=list(df_product.tokens),
+                            vector_size=100, window=5, min_count=1, workers=4)
+    W_vectorizer.save( str(path / "bigdata/Word2Vec.pkl"))    
+    # 儲存商品 DataFrame
+    joblib.dump(df_product, path / "bigdata/df_product.pkl")
 
 def most_similar_filter(search_product,top_n=5):
     """
@@ -186,7 +180,6 @@ def most_similar_filter(search_product,top_n=5):
     
     similar_products = find_similar_products(vectorizer,vector, df_product,top_n=top_n)
     return similar_products
-
     
 def recommand_list_generator(top_n=50):
     '''
@@ -230,7 +223,7 @@ def recommand_list_generator(top_n=50):
 
         for product_id in top_products["id"]:
             recommand_data.append((user, product_id))
-        
+    
     # **將推薦結果存入 SQLite**
     with conn:
         cursor = conn.cursor()
@@ -241,7 +234,8 @@ def recommand_list_generator(top_n=50):
                 product_id INTEGER
             )
         """)
-        cursor.executemany("INSERT INTO myapp_recommand_list (user_id, product_id) VALUES (?, ?)", recommand_data)
+        cursor.executemany("INSERT INTO myapp_recommand_list (user_id, product_id) VALUES (?, ?)",
+                           recommand_data)
     
     conn.close()
     
