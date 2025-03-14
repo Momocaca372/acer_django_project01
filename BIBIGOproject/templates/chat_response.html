@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    {% load static %}
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'base.css' %}">
+    <link rel="stylesheet" href="{% static 'customer_service.css' %}">
+    <title>bibigo 客服</title>
+    <style>
+        /* 新增CSS來居中 */
+        .chat-input {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .chat-input textarea {
+            width: 60%;
+            height: 150px;
+            padding: 10px;
+            font-size: 16px;
+            resize: none; /* 禁止手動調整大小 */
+            white-space: pre-wrap; /* 使換行生效 */
+        }
+
+        .chat-input button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頁首 -->
+    <header class="header">
+        <div class="container">
+            <a href="/myapp/subpage/" class="logo">
+                <img src="{% static 'LOGO.jpg' %}" alt="bibigo Logo" class="logo-img">
+            </a>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="#" class="nav-link">熱門商品</a></li>
+                    <li><a href="#" class="nav-link">商品分類</a></li>
+                    <li><a href="#" class="nav-link">關注商品</a></li>
+                    <li><a href="#customer-service" class="nav-link">客服</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 客服區域 -->
+    <main class="main-content">
+        <section id="customer-service" class="customer-service">
+            <h2 class="service-title">聯絡客服</h2>
+            <div class="chat-box">
+                <form id="chat-form" class="chat-input" method="POST" action="/myapp/contact_view/">
+                    {% csrf_token %}
+                    <textarea id="user-input" name="message" placeholder="請輸入您的問題..." required></textarea>
+                    <button type="submit">送出</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 bibigo. 版權所有。</p>
+        </div>
+    </footer>
+
+    <script>
+        // 如果需要顯示提交結果，可以根據後端響應進行處理
+        const form = document.getElementById("chat-form");
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();  // 防止頁面重新加載
+
+            let input = document.getElementById("user-input");
+            let message = input.value.trim();
+
+            if (message !== "") {
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);  // 顯示後端返回的訊息
+                    if (data.status === "success") {
+                        input.value = "";  // 清空輸入框
+                    }
+                })
+                .catch(error => {
+                    alert("發生錯誤，請稍後再試");
+                });
+            } else {
+                alert("請輸入您的問題！");
+            }
+        });
+    </script>
+</body>
+</html>
