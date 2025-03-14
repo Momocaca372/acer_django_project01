@@ -129,3 +129,11 @@ django_heroku.settings(locals())
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # 或者您使用的郵件提供商的 SMTP 服務
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'fxxkmenglin@gmail.com'  # 您的電子郵件地址
+EMAIL_HOST_PASSWORD = 'lxgpcdahknozfdsz'  # 您的電子郵件密碼（或者應用專用密碼）
