@@ -16,4 +16,6 @@ urlpatterns = [
     path('hot/', views.hot, name='hot'),
     path('load-more-products/', views.load_more_products, name='load_more_products'),
     path('load_more_related_products/', views.load_more_related_products, name='load_more_related_products'),
+    path('chat_response/', views.chat_response, name='chat_response'),
+    path('contact_view/', views.contact_view, name='contact_view'),
 ]
