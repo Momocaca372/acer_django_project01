@@ -52,7 +52,7 @@ def save_to_db(products):
             store_id, 
             category_id, 
             product['name'], 
-            product['price'], 
+            product['price'].replace(',', ''), 
             product['img_url'], 
             product['product_url']
         ))
@@ -65,6 +65,6 @@ def save_to_db(products):
 
 # 主程式
 if __name__ == '__main__':
-    with open('product.json', 'r', encoding='utf-8') as file:
+    with open('product_save.json', 'r', encoding='utf-8') as file:
        all_products = json.load(file) 
     save_to_db(all_products)  # 將商品存入資料庫
