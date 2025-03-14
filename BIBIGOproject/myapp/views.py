@@ -451,3 +451,27 @@ def hot(request):
         'hot_tags': hot_tags,
         'categories': categories
     })
+
+def chat_response(request):
+    return render(request, 'chat_response.html')
+
+
+def contact_view(request):
+    if request.method == "POST":
+        message = request.POST.get('message')
+        
+        if message:
+            try:
+                # 發送郵件
+                send_mail(
+                    '客戶服務訊息',  # 郵件標題
+                    message,        # 郵件內容
+                    settings.EMAIL_HOST_USER,  # 發件人郵箱
+                    ['your_email@example.com'],  # 收件人郵箱
+                    fail_silently=False,
+                )
+                return JsonResponse({'status': 'success', 'message': '已提交，感謝您的聯絡！'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f'發生錯誤：{str(e)}'}, status=500)
+
+    return JsonResponse({'status': 'error', 'message': '無效的請求'}, status=400)
