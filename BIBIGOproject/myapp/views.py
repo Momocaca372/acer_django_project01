@@ -9,7 +9,9 @@ from django.db.models import Q,Count
 import re
 import random
 import logging
-
+from django.http import  HttpResponse
+from django.core.mail import send_mail
+from django.conf import settings
 logger = logging.getLogger(__name__)
 
 VALUE_TO_CATEGORY = {
