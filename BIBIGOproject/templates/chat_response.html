@@ -9,7 +9,47 @@
     <link rel="stylesheet" href="{% static 'customer_service.css' %}">
     <title>bibigo 客服</title>
     <style>
-        /* 新增CSS來居中 */
+        /* 整個頁面的居中對齊 */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 客服區域居中對齊 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .customer-service {
+            width: 100%;
+            max-width: 600px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        /* 聊天框輸入區域 */
         .chat-input {
             display: flex;
             flex-direction: column;
@@ -20,18 +60,38 @@
         }
 
         .chat-input textarea {
-            width: 60%;
+            width: 100%;
+            max-width: 100%;
             height: 150px;
             padding: 10px;
             font-size: 16px;
-            resize: none; /* 禁止手動調整大小 */
-            white-space: pre-wrap; /* 使換行生效 */
+            resize: none;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
         }
 
         .chat-input button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            background-color: #2980b9;
+        }
+
+        /* 頁尾樣式 */
+        .footer {
+            padding: 10px 0;
+            text-align: center;
+            background-color: #f1f1f1;
         }
     </style>
 </head>
@@ -39,17 +99,24 @@
     <!-- 頁首 -->
     <header class="header">
         <div class="container">
-            <a href="/myapp/subpage/" class="logo">
+            <a href="{% url 'subpage' %}" class="logo">
                 <img src="{% static 'LOGO.jpg' %}" alt="bibigo Logo" class="logo-img">
             </a>
             <nav class="nav">
                 <ul class="nav-links">
-                    <li><a href="#" class="nav-link">熱門商品</a></li>
-                    <li><a href="#" class="nav-link">商品分類</a></li>
-                    <li><a href="#" class="nav-link">關注商品</a></li>
+                    <li><a href="/myapp/hot" class="nav-link">熱門商品</a></li>
+                    <li><a href="/myapp/cat/" class="nav-link">商品分類</a></li>
+                    <li><a href="/myapp/care/" class="nav-link">關注商品</a></li>
                     <li><a href="#customer-service" class="nav-link">客服</a></li>
                 </ul>
             </nav>
+            <div class="auth-buttons">
+                {% if request.session.user_email %}
+                    <a href="{% url 'logout' %}" class="btn-auth">登出</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-auth">登入 | 註冊</a>
+                {% endif %}
+            </div>
         </div>
     </header>
 
