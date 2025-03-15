@@ -13,20 +13,36 @@
     <link rel="stylesheet" href="{% static 'hot.css' %}">
     <link rel="stylesheet" href="{% static 'care.css' %}">
     <link rel="stylesheet" href="{% static 'product.css' %}">
-    <link rel="stylesheet" href="{% static 'cat.css' %}">
     {% endblock %}
     <title>bibigo</title>
+    <style>
+        /* 左下角按鈕樣式 */
+        .btn-left-bottom {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-left-bottom:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
     <!-- 頁首 -->
     <header class="header">
         <div class="container">
-            <!-- 頁面標誌 -->
             <a href="{% url 'subpage' %}" class="logo">
                 <img src="{% static 'LOGO.jpg' %}" alt="bibigo Logo" class="logo-img">
             </a>
-
-            <!-- 導航列 -->
             <nav class="nav">
                 <ul class="nav-links">
                     <li><a href="/myapp/hot">熱門商品</a></li>
@@ -34,8 +50,6 @@
                     <li><a href="/myapp/care/">關注商品</a></li>
                 </ul>
             </nav>
-
-            <!-- 登入註冊/登出按鈕 -->
             <div class="auth-buttons">
                 {% if request.session.user_email %}
                     <a href="{% url 'logout' %}" class="btn-auth">登出</a>
@@ -46,11 +60,13 @@
         </div>
     </header>
 
-    <!-- 主要內容區 -->
     <main class="main-content">
         {% block content %}
         {% endblock %}
     </main>
+
+    <!-- 左下角的按鈕 -->
+    <a href="/myapp/chat_response" class="btn-left-bottom">聯絡客服</a>
 
     <!-- 頁尾 -->
     <footer class="footer">
