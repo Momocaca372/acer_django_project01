@@ -22,7 +22,66 @@
 
             <main class="subpage-content">
                 <h2>我的關注列表</h2>
+
                 {% if request.session.user_email %}
+                    <!-- 分類器區塊 -->
+                    <div class="care-filter">
+                        <div class="filter-row">
+                            <h3>商店</h3>
+                            <div class="filter-options">
+                                {% for store in stores %}
+                                    <a href="{% url 'care' %}?store={{ store.id }}{% if selected_category %}&category={{ selected_category }}{% endif %}" 
+                                       class="filter-btn {% if selected_store == store.id %}active{% endif %}">{{ store.name }}</a>
+                                {% endfor %}
+                                <a href="{% url 'care' %}{% if selected_category %}?category={{ selected_category }}{% endif %}" 
+                                   class="filter-btn {% if not selected_store %}active{% endif %}">全部</a>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <h3>商品分類</h3>
+                            <div class="filter-options">
+                                {% for cat in categories|slice:":5" %}
+                                    <a href="{% url 'care' %}?{% if selected_store %}store={{ selected_store }}&{% endif %}category={{ cat.value }}" 
+                                       class="filter-btn {% if selected_category == cat.value %}active{% endif %}">{{ cat.name }}</a>
+                                {% endfor %}
+                                <a href="{% url 'care' %}{% if selected_store %}?store={{ selected_store }}{% endif %}" 
+                                   class="filter-btn {% if not selected_category %}active{% endif %}">全部</a>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-options">
+                                {% for cat in categories|slice:"5:" %}
+                                    <a href="{% url 'care' %}?{% if selected_store %}store={{ selected_store }}&{% endif %}category={{ cat.value }}" 
+                                       class="filter-btn {% if selected_category == cat.value %}active{% endif %}">{{ cat.name }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 「你可能會喜歡」區域（僅在登入後顯示） -->
+                    <div class="recommended-products">
+                        <h3>你可能會喜歡</h3>
+                        <div class="recommended-container">
+                            <button class="nav-btn prev-btn" disabled>◄</button>
+                            <div class="recommended-list" id="recommended-list">
+                                <!-- 初始顯示第一批（10 個） -->
+                                {% for recommended in recommended_products|slice:":10" %}
+                                    <div class="recommended-item">
+                                        <a href="{% url 'product' recommended.id %}" class="recommended-link">
+                                            <img src="{{ recommended.image_url }}" alt="{{ recommended.name }}">
+                                            <div class="recommended-info">
+                                                <span class="recommended-name">{{ recommended.name }}</span>
+                                                <span class="recommended-price">$ {{ recommended.price_int }}</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <button class="nav-btn next-btn">►</button>
+                        </div>
+                    </div>
+
+                    <!-- 關注商品列表 -->
                     {% if followed_products %}
                         <div class="subpage-products">
                             {% for followed in followed_products %}
@@ -33,7 +92,7 @@
                                         <span class="product-name">{{ followed.product.name }}</span>
                                     </a>
                                     <div class="right-aligned">
-                                        <span class="product-price">$ {{ followed.product.price }}</span>
+                                        <span class="product-price">$ {{ followed.product.price_int }}</span>
                                         <a href="{{ followed.product.product_url }}" target="_blank" class="buy-btn">購買</a>
                                         <button class="unfollow-btn follow-btn" data-product-id="{{ followed.product.id }}" title="取消關注">
                                             <span class="heart-icon followed"></span>
@@ -59,6 +118,7 @@
     $(document).ready(function() {
         console.log("jQuery loaded");
 
+        // 關注/取消關注功能
         $('.follow-btn').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -108,6 +168,67 @@
                 }
             });
         });
+
+        // 推薦商品左右切換功能（僅在登入後執行）
+        {% if request.session.user_email %}
+        const recommendedProducts = [
+            {% for recommended in recommended_products %}
+                {
+                    id: {{ recommended.id }},
+                    name: "{{ recommended.name }}",
+                    image_url: "{{ recommended.image_url }}",
+                    price: {{ recommended.price_int }}
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const itemsPerPage = 10; // 每批顯示 10 個商品
+        const totalItems = recommendedProducts.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        let currentPage = 1;
+
+        function updateRecommendedList() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const currentItems = recommendedProducts.slice(start, end);
+
+            $('#recommended-list').empty();
+            currentItems.forEach(function(item) {
+                const itemHtml = `
+                    <div class="recommended-item">
+                        <a href="/myapp/product/${item.id}/" class="recommended-link">
+                            <img src="${item.image_url}" alt="${item.name}">
+                            <div class="recommended-info">
+                                <span class="recommended-name">${item.name}</span>
+                                <span class="recommended-price">$ ${item.price}</span>
+                            </div>
+                        </a>
+                    </div>`;
+                $('#recommended-list').append(itemHtml);
+            });
+
+            // 更新按鈕狀態
+            $('.prev-btn').prop('disabled', currentPage === 1);
+            $('.next-btn').prop('disabled', currentPage === totalPages);
+        }
+
+        $('.next-btn').on('click', function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateRecommendedList();
+            }
+        });
+
+        $('.prev-btn').on('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                updateRecommendedList();
+            }
+        });
+
+        // 初始更新
+        updateRecommendedList();
+        {% endif %}
     });
 </script>
 {% endblock %}

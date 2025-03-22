@@ -15,7 +15,7 @@
 .subpage-row {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
     margin-top: 10px;
 }
@@ -26,102 +26,13 @@
     padding: 20px;
     background-color: transparent;
     font-size: 20px;
+    margin-left: 0;
 }
 
 .subpage-list-unstyled {
     list-style-type: none;
     padding-left: 0;
     margin-top: 5px;
-}
-
-.subpage-sub-list {
-    list-style-type: none;
-    padding-left: 20px;
-}
-
-.subpage-content {
-    flex: 2 1 600px;
-    max-width: 100%;
-    padding: 20px;
-    font-size: 20px;
-}
-
-.subpage-ai-service {
-    font-size: 20px;
-    flex: 1 1 200px;
-    max-width: 20%;
-    padding: 20px;
-    background-color: transparent;
-    color: rgb(0, 0, 0);
-}
-
-.subpage-search-bar {
-    display: flex;
-    width: 100%;
-    max-width: 800px;
-    margin-left: 0px;
-    gap: 0px;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.subpage-search-bar input {
-    font-size: 15px;
-    width: auto;
-    min-width: 500px;
-    max-width: 100%;
-    flex-grow: 1;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-.subpage-search-bar button {
-    padding: 7px 10px;
-    background-color: #007bff;
-    border: none;
-    border-radius: 5px;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-    width: auto;
-}
-
-/* 熱門搜尋標籤（沿用其他頁面樣式） */
-.subpage-search-tag {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    margin-top: 10px;
-    margin-left: 0px;
-    justify-content: flex-start;
-}
-
-.subpage-search-label {
-    background-color: #dc3545;
-    color: white;
-    padding: 8px 15px;
-    border-radius: 5px;
-}
-
-.subpage-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-left: 20px;
-}
-
-.subpage-tag {
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-    text-decoration: none;
-    color: #333;
-}
-
-.subpage-tag:hover {
-    background-color: #007bff;
-    color: white;
 }
 
 .subpage-category {
@@ -138,47 +49,159 @@
     background-color: #f8f9fa;
 }
 
-.subpage-ai-service iframe {
+.subpage-content {
+    flex: 2 1 600px;
+    max-width: 60%;
+    padding: 20px;
+    font-size: 20px;
+}
+
+.subpage-search-container {
     width: 100%;
-    height: 400px;
-    border-radius: 10px;
+}
+
+.subpage-search-bar {
+    display: flex;
+    width: 100%;
+    max-width: 800px;
+    margin-left: 400px;
+    gap: 0px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.subpage-search-bar input {
+    font-size: 15px;
+    width: auto;
+    min-width: 700px;
+    max-width: 100%;
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.subpage-search-bar button {
+    padding: 7px 10px;
+    background-color: #007bff;
     border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    width: auto;
+    position: relative;
+    top: 2px;
+    left: -4px;
+}
+
+.subpage-search-tag {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    margin-left: 400px;
+}
+
+.subpage-search-label {
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    align-self: flex-start;
+    margin-top: 3px;
+}
+
+.subpage-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-left: 20px;
+}
+
+.subpage-tag {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    text-decoration: none;
+    color: #333;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.subpage-tag:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.hot-tag-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 20px;
+    vertical-align: middle;
 }
 
 /* 分類品項區域 */
 .subpage-products {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5 列 */
-    grid-template-rows: repeat(2, auto); /* 2 行 */
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(4, auto);
     gap: 20px;
-    justify-items: center;
+    justify-content: center;
 }
 
-.category-item {
+.subpage-product-item {
+    display: block;
+    width: 200px;
     text-align: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
 }
 
-.category-item a {
-    text-decoration: none;
+.subpage-product-item:hover {
+    transform: scale(1.05);
+    background-color: #e9ecef;
+}
+
+.subpage-product-item img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+.subpage-product-item p {
+    margin: 10px 0 5px;
+    font-size: 16px;
     color: #333;
+}
+
+.product-link {
+    text-decoration: none;
+    color: inherit;
     display: block;
 }
 
-.category-image {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 8px;
+.success {
+    color: green;
+    font-size: 14px;
+    margin: 10px 0;
 }
 
-.category-item p {
-    margin: 10px 0 0;
-    font-size: 16px;
+.error {
+    color: #dc3545;
+    font-size: 14px;
+    margin: 10px 0;
 }
 
 /* 響應式設計 */
 @media (max-width: 992px) {
-    .subpage-sidebar, .subpage-content, .subpage-ai-service {
+    .subpage-sidebar, .subpage-content {
         max-width: 100%;
         flex: 1 1 100%;
     }
@@ -186,13 +209,30 @@
     .subpage-search-bar {
         flex-direction: column;
         width: 90%;
+        margin-left: 0;
     }
 
     .subpage-search-bar input {
         margin-bottom: 10px;
     }
 
+    .subpage-search-tag {
+        margin-left: 0;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .subpage-tags {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    .hot-tag-image {
+        width: 80px;
+        height: 80px;
+    }
+
     .subpage-products {
-        grid-template-columns: 1fr; /* 小螢幕變為單列 */
+        grid-template-columns: repeat(4, 1fr);
     }
 }

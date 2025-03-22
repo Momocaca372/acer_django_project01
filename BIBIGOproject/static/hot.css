@@ -1,4 +1,4 @@
-/* 設定整體容器樣式 */
+/* hot.css */
 .subpage-container {
     max-width: 1900px;
     width: 100%;
@@ -12,22 +12,21 @@
     margin: 0 auto;
 }
 
-/* 設定主要區塊的排列方式 */
 .subpage-row {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
     margin-top: 10px;
 }
 
-/* 商品分類側邊欄（沿用其他頁面樣式） */
 .subpage-sidebar {
     flex: 1 1 200px;
     max-width: 20%;
     padding: 20px;
     background-color: transparent;
     font-size: 20px;
+    margin-left: 0;
 }
 
 .subpage-list-unstyled {
@@ -50,30 +49,22 @@
     background-color: #f8f9fa;
 }
 
-/* 主內容區域 */
 .subpage-content {
     flex: 2 1 600px;
-    max-width: 100%;
+    max-width: 60%;
     padding: 20px;
     font-size: 20px;
 }
 
-/* AI 客服區塊 */
-.subpage-ai-service {
-    font-size: 20px;
-    flex: 1 1 200px;
-    max-width: 20%;
-    padding: 20px;
-    background-color: transparent;
-    color: rgb(0, 0, 0);
+.subpage-search-container {
+    width: 100%;
 }
 
-/* 搜索框區域 */
 .subpage-search-bar {
     display: flex;
     width: 100%;
     max-width: 800px;
-    margin-left: 0px;
+    margin-left: 400px;
     gap: 0px;
     justify-content: space-between;
     align-items: center;
@@ -82,7 +73,7 @@
 .subpage-search-bar input {
     font-size: 15px;
     width: auto;
-    min-width: 500px;
+    min-width: 700px;
     max-width: 100%;
     flex-grow: 1;
     padding: 10px;
@@ -99,15 +90,17 @@
     cursor: pointer;
     font-size: 16px;
     width: auto;
+    position: relative;
+    top: 2px;
+    left: -4px;
 }
 
-/* 熱門搜尋標籤 */
 .subpage-search-tag {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
     margin-top: 10px;
-    margin-left: 0px;
+    margin-left: 400px;
 }
 
 .subpage-search-label {
@@ -115,6 +108,8 @@
     color: white;
     padding: 8px 15px;
     border-radius: 5px;
+    align-self: flex-start;
+    margin-top: 3px;
 }
 
 .subpage-tags {
@@ -141,51 +136,55 @@
     color: white;
 }
 
-/* 熱門商品區塊 */
+.hot-tag-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 20px;
+    vertical-align: middle;
+}
+
 .subpage-products {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5 列 */
-    grid-template-rows: repeat(2, auto); /* 2 行 */
-    gap: 15px;
-    margin-top: 20px;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(4, auto);
+    gap: 20px;
+    justify-content: center;
 }
 
-.hot-product-item {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.subpage-product-item {
+    display: block;
+    width: 200px;
+    text-align: center;
     padding: 10px;
-    display: flex;
-    flex-direction: column;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
 }
 
-.product-link {
-    text-decoration: none;
+.subpage-product-item:hover {
+    transform: scale(1.05);
+    background-color: #e9ecef;
+}
+
+.subpage-product-item img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+.subpage-product-item p {
+    margin: 10px 0 5px;
+    font-size: 16px;
     color: #333;
 }
 
-.product-img {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-}
-
-.product-info {
-    display: flex;
-    flex-direction: column;
-    margin-top: 5px;
-}
-
-.product-name {
-    font-size: 16px;
-    margin-bottom: 5px;
-    text-align: left;
-}
-
-.product-details {
+.price-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin: 10px 0 5px;
 }
 
 .product-price {
@@ -209,6 +208,7 @@
     height: 24px;
     background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.72-8.72a5.5 5.5 0 0 0 0-7.78z"/></svg>') no-repeat center;
     background-size: contain;
+    transition: all 0.3s ease;
 }
 
 .heart-icon.followed {
@@ -216,9 +216,15 @@
     background-size: contain;
 }
 
-/* 響應式設計（適用於平板與手機） */
+.product-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+/* 響應式設計 */
 @media (max-width: 992px) {
-    .subpage-sidebar, .subpage-content, .subpage-ai-service {
+    .subpage-sidebar, .subpage-content {
         max-width: 100%;
         flex: 1 1 100%;
     }
@@ -226,13 +232,30 @@
     .subpage-search-bar {
         flex-direction: column;
         width: 90%;
+        margin-left: 0;
     }
 
     .subpage-search-bar input {
         margin-bottom: 10px;
     }
 
+    .subpage-search-tag {
+        margin-left: 0;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .subpage-tags {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    .hot-tag-image {
+        width: 80px;
+        height: 80px;
+    }
+
     .subpage-products {
-        grid-template-columns: repeat(2, 1fr); /* 小螢幕調整為 2 列 */
+        grid-template-columns: repeat(4, 1fr);
     }
 }

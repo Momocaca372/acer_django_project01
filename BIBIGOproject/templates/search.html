@@ -22,16 +22,27 @@
                 <p class="subpage-search-label">熱門搜尋</p>
                 <div class="subpage-tags">
                     {% for tag in hot_tags %}
-                        <a href="{% url 'search' %}?q={{ tag.name }}" class="subpage-tag">{{ tag.name|truncatechars:10 }}</a>
+                        <a href="{% url 'search' %}?q={{ tag.name }}" class="subpage-tag">
+                            <img src="{{ tag.image_url|default:'/static/default_image.png' }}" alt="{{ tag.name }}" class="hot-tag-image">
+                            <!-- 調試用：顯示圖片 URL -->
+                            <span style="font-size: 10px; color: #999;">{{ tag.image_url }}</span>
+                        </a>
+                    {% empty %}
+                        <p>暫無熱門標籤</p>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 商品分類、搜尋結果、AI客服區域 -->
+    <!-- 商品分類與搜尋結果 -->
     <section class="subpage-content-container">
         <div class="subpage-row">
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="{{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
             <aside class="subpage-sidebar">
                 <h1>商品分類</h1>
                 <ul class="subpage-list-unstyled">
@@ -43,6 +54,7 @@
                 </ul>
             </aside>
             <main class="subpage-content">
+                <h1>搜尋結果</h1>
                 <div class="subpage-products" id="product-list">
                     {% if products %}
                         {% for product in products %}
@@ -65,21 +77,11 @@
                 </div>
                 <div id="loading" style="display: none; text-align: center; padding: 20px;">載入中...</div>
             </main>
-            <aside class="subpage-ai-service">
-                <h1>AI客服</h1>
-                <iframe
-                    allow="microphone;"
-                    width="100%"
-                    height="400"
-                    style="border: none; border-radius: 10px;"
-                    src="https://console.dialogflow.com/api-client/demo/embedded/0f7ba45a-cdd0-4fe3-b692-545a9dbd30bf">
-                </iframe>
-            </aside>
         </div>
     </section>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block extra_scripts %}
 <script>
     $(document).ready(function() {
         let offset = 20; // 從第 21 個開始，因為初始顯示 20 個
@@ -122,21 +124,26 @@
             });
         });
 
-        // 載入更多功能
-        $(window).scroll(function() {
-            if ($(window).scrollTop() + $(window).height() > $(document).height() - 100 && !loading) {
+        // 載入更多功能 - 改進觸發條件
+        $(window).on('scroll', function() {
+            const $productList = $('#product-list');
+            const scrollBottom = $(window).scrollTop() + $(window).height();
+            const listBottom = $productList.offset().top + $productList.outerHeight();
+
+            if (scrollBottom >= listBottom - 100 && !loading) {
                 loading = true;
                 $('#loading').show();
 
                 $.ajax({
                     url: '{% url "load_more_products" %}',
+                    method: 'GET',
                     data: {
                         'offset': offset,
                         'query': query
                     },
                     success: function(response) {
                         const products = response.products;
-                        if (products.length > 0) {
+                        if (products && products.length > 0) {
                             products.forEach(function(product) {
                                 const productHtml = `
                                     <div class="subpage-product-item">
@@ -158,7 +165,8 @@
                         $('#loading').hide();
                         loading = false;
                     },
-                    error: function() {
+                    error: function(xhr) {
+                        console.error('載入失敗:', xhr);
                         $('#loading').hide();
                         loading = false;
                     }
@@ -167,4 +175,5 @@
         });
     });
 </script>
+{% endblock %}
 {% endblock %}

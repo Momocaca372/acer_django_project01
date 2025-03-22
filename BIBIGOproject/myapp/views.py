@@ -5,17 +5,16 @@ from django.views.decorators.csrf import csrf_exempt
 from BIBIGOproject.firebase_config import pyrebase_auth  # 從你的配置導入
 from firebase_admin import auth as firebase_admin_auth  # 直接從 firebase_admin 導入 auth
 from myapp.models import Product, FollowedProduct
-from django.db.models import Q,Count
+from django.db.models import Q, Count
 import re
 import random
 import logging
+import sqlite3
+from django.core.mail import send_mail
+from bigdata_final import most_similar_filter
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
-
-VALUE_TO_CATEGORY = {
-    85: "食品飲料", 86: "3C科技", 87: "影音家電", 88: "保健美容", 89: "日用母嬰",
-    90: "服飾時尚", 91: "家具餐廚", 92: "珠寶黃金", 93: "運動戶外", 94: "辦公文具"
-}
 
 STORE_BASE_URLS = {
     "1": "https://online.carrefour.com.tw",
@@ -24,12 +23,16 @@ STORE_BASE_URLS = {
     "4": "https://www.savesafe.com.tw/Products/"
 }
 
-# STORE_LOGOS = {
-#     "1": "家樂福LOGO.jpg",
-#     "2": "COSTCO.png",
-#     "3": "寶雅LOGO.jpg",
-#     "4": "大買家LOGO.png"
-# }
+# 統一圖片處理邏輯
+def process_image_url(img_url, store_id, store_base_url):
+    if img_url and img_url.startswith('http'):
+        return img_url
+    elif img_url:
+        if store_id in ['1', '2']:
+            return store_base_url + img_url
+        return img_url
+    return '/static/default_image.png'  # 預設圖片
+
 
 # 通用函數：從 token 獲取 UID
 def get_user_from_token(request):
@@ -50,54 +53,48 @@ def get_user_from_token(request):
 def home(request):
     return render(request, 'base.html')
 
-from django.shortcuts import render
-from django.http import JsonResponse
-from myapp.models import Product, FollowedProduct
-from django.db.models import Count
-import random
-
-# 假設 VALUE_TO_CATEGORY 已獨立定義並導入
-# from myapp.some_module import VALUE_TO_CATEGORY
-
-
 def subpage(request):
     uid = request.session.get('firebase_uid')
-    category_value = request.GET.get('category', None)
+    category_value = request.GET.get('category', '')
+
     if category_value:
-        category_value = int(category_value)
         hot_products = Product.objects.filter(value=category_value).order_by('?')[:20]
-        category_name = VALUE_TO_CATEGORY.get(category_value, "未知分類")
     else:
-        hot_products = Product.objects.all().order_by('?')[:20]
-        category_name = "所有商品"
+        hot_products = Product.objects.order_by('?')[:20]
 
     for product in hot_products:
         store_id = str(product.store.id)
         store_url = STORE_BASE_URLS.get(store_id, "")
-        # 圖片 URL 處理
         if store_id in ["1", "2"]:
-            product.image_url = product.img_url if product.img_url.startswith('http') else store_url + product.img_url
+            product.image_url = product.img_url if product.img_url and product.img_url.startswith('http') else store_url + (product.img_url or '')
         else:
-            product.image_url = product.img_url
-        # 商品 URL 處理
-        product.product_url = product.product_url if product.product_url.startswith('http') else store_url + product.product_url
-        product.price_int = int(product.price)
+            product.image_url = product.img_url or ''
+        product.product_url = product.product_url if product.product_url and product.product_url.startswith('http') else store_url + (product.product_url or '')
+        product.price_int = int(float(product.price)) if product.price is not None else 0
         product.is_followed = FollowedProduct.objects.filter(user_id=uid, product=product).exists() if uid else False
+
+    categories = Product.objects.values('value').distinct().order_by('value')
+    categories = [{'value': cat['value'], 'name': cat['value']} for cat in categories if cat['value'] is not None]
 
     popular_products = FollowedProduct.objects.values('product').annotate(
         follow_count=Count('id')
     ).order_by('-follow_count')[:10]
     product_ids = [item['product'] for item in popular_products]
     hot_tags = Product.objects.filter(id__in=product_ids)
+    for tag in hot_tags:
+        store_id = str(tag.store.id)
+        store_url = STORE_BASE_URLS.get(store_id, "")
+        if store_id in ["1", "2"]:
+            tag.image_url = tag.img_url if tag.img_url and tag.img_url.startswith('http') else store_url + (tag.img_url or '')
+        else:
+            tag.image_url = tag.img_url or ''
     hot_tags = random.sample(list(hot_tags), min(5, len(hot_tags)))
-
-    categories = [{'value': v, 'name': n} for v, n in VALUE_TO_CATEGORY.items()]
 
     return render(request, 'subpage.html', {
         'hot_products': hot_products,
-        'hot_tags': hot_tags,
         'categories': categories,
-        'category_name': category_name
+        'hot_tags': hot_tags,
+        'uid': uid,
     })
 
 def load_more_products(request):
@@ -114,14 +111,12 @@ def load_more_products(request):
 
     product_list = []
     for product in products:
-        store_id = str(product.store.id)
+        store_id = str(product.store_id)
         store_url = STORE_BASE_URLS.get(store_id, "")
-        # 圖片 URL 處理
-        if store_id in ["1", "2"]:  # 家樂福和 Costco
+        if store_id in ["1", "2"]:
             image_url = product.img_url if product.img_url.startswith('http') else store_url + product.img_url
-        else:  # 寶雅 (3) 和大買家 (4)
-            image_url = product.img_url  # 不拼接，直接使用原始圖片 URL
-        # 商品 URL 處理
+        else:
+            image_url = product.img_url
         product_url = product.product_url if product.product_url.startswith('http') else store_url + product.product_url
         is_followed = FollowedProduct.objects.filter(user_id=uid, product=product).exists() if uid else False
         product_data = {
@@ -134,7 +129,6 @@ def load_more_products(request):
         product_list.append(product_data)
 
     return JsonResponse({'products': product_list})
-    return JsonResponse({'products': product_list})
 
 # 搜尋視圖
 def search(request):
@@ -143,24 +137,23 @@ def search(request):
     if query:
         products = Product.objects.filter(
             Q(name__icontains=query) | Q(price__icontains=query)
-        )[:20]  # 初始載入 20 筆
+        )[:20]
     else:
         products = Product.objects.none()
 
+    # 處理 products 的 image_url 和其他屬性
     for product in products:
-        store_id = str(product.store.id)
+        store_id = str(product.store_id)
         store_url = STORE_BASE_URLS.get(store_id, "")
-        # 圖片 URL 處理
-        if store_id in ["1", "2"]:  # 家樂福和 Costco
+        if store_id in ["1", "2"]:
             product.image_url = product.img_url if product.img_url.startswith('http') else store_url + product.img_url
-        else:  # 寶雅 (3) 和大買家 (4)
-            product.image_url = product.img_url  # 不拼接，直接使用原始圖片 URL
-        # 商品 URL 處理
+        else:
+            product.image_url = product.img_url
         product.product_url = product.product_url if product.product_url.startswith('http') else store_url + product.product_url
         product.price_int = int(product.price)
         product.is_followed = FollowedProduct.objects.filter(user_id=uid, product=product).exists() if uid else False
 
-    # 熱門標籤
+    # 處理 hot_tags
     popular_products = FollowedProduct.objects.values('product').annotate(
         follow_count=Count('id')
     ).order_by('-follow_count')[:10]
@@ -168,7 +161,17 @@ def search(request):
     hot_tags = Product.objects.filter(id__in=product_ids)
     hot_tags = random.sample(list(hot_tags), min(5, len(hot_tags)))
 
-    categories = [{'value': v, 'name': n} for v, n in VALUE_TO_CATEGORY.items()]
+    # 為 hot_tags 添加 image_url（與 products 一致）
+    for tag in hot_tags:
+        store_id = str(tag.store_id)
+        store_url = STORE_BASE_URLS.get(store_id, "")
+        if store_id in ["1", "2"]:
+            tag.image_url = tag.img_url if tag.img_url.startswith('http') else store_url + tag.img_url
+        else:
+            tag.image_url = tag.img_url
+
+    categories = Product.objects.values('value').distinct().order_by('value')
+    categories = [{'value': cat['value'], 'name': cat['value']} for cat in categories]
 
     return render(request, 'search.html', {
         'products': products,
@@ -284,16 +287,26 @@ def forget_password_view(request):
 
 # 分類視圖
 def cat_view(request):
-    # 保留原本的分類邏輯
-    categories = [(v, n, f"Class_img/{v}.png") for v, n in VALUE_TO_CATEGORY.items()]
+    # 動態生成分類列表，直接從 Product.value 獲取
+    categories = Product.objects.values('value').distinct().order_by('value')
+    categories = [(cat['value'], cat['value'], f"Class_img/{cat['value']}.jpg") for cat in categories]
 
-    # 添加與其他頁面一致的熱門標籤邏輯
+    # 處理 hot_tags
     popular_products = FollowedProduct.objects.values('product').annotate(
         follow_count=Count('id')
     ).order_by('-follow_count')[:10]
     product_ids = [item['product'] for item in popular_products]
     hot_tags = Product.objects.filter(id__in=product_ids)
     hot_tags = random.sample(list(hot_tags), min(5, len(hot_tags)))
+
+    # 為 hot_tags 添加 image_url
+    for tag in hot_tags:
+        store_id = str(tag.store_id)
+        store_url = STORE_BASE_URLS.get(store_id, "")
+        if store_id in ["1", "2"]:
+            tag.image_url = tag.img_url if tag.img_url.startswith('http') else store_url + tag.img_url
+        else:
+            tag.image_url = tag.img_url
 
     return render(request, 'cat.html', {
         'categories': categories,
@@ -312,8 +325,7 @@ def follow_product(request):
 
         product_id = request.POST.get('product_id')
         logger.info(f"Product ID: {product_id}")
-        product = get_object_or_404(Product, id=product_id)
-        
+        product = get_object_or_404(Product, id=int(product_id))
         followed, created = FollowedProduct.objects.get_or_create(user_id=uid, product=product)
         logger.info(f"Followed: {followed}, Created: {created}")
         if not created:
@@ -327,33 +339,58 @@ def follow_product(request):
 
 # 商品詳情視圖
 def product(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+    product = get_object_or_404(Product, id=int(product_id))
     uid = request.session.get('firebase_uid')
     store_id = str(product.store.id)
-    store_url = STORE_BASE_URLS.get(store_id, "")
+    store_base_url = STORE_BASE_URLS.get(store_id, "")
     
-    # 圖片 URL 處理
-    if store_id in ["1", "2"]:  # 家樂福和 Costco
-        product.image_url = product.img_url if product.img_url.startswith('http') else store_url + product.img_url
-    else:  # 寶雅 (3) 和大買家 (4)
-        product.image_url = product.img_url
-    # 商品 URL 處理
-    product.product_url = product.product_url if product.product_url.startswith('http') else store_url + product.product_url
-    product.price_int = int(product.price)
+
+    # 處理當前商品的圖片和連結
+    product.image_url = process_image_url(product.img_url, store_id, store_base_url)
+    product.product_url = product.product_url if product.product_url and product.product_url.startswith('http') else store_base_url + (product.product_url or '')
+    product.price_int = int(float(product.price)) if product.price is not None else 0
     is_followed = FollowedProduct.objects.filter(user_id=uid, product=product).exists() if uid else False
 
-    # 相關商品（初始 5 個）
-    related_products = Product.objects.filter(value=product.value).exclude(id=product.id).order_by('?')[:5]
-    for related in related_products:
-        related_store_id = str(related.store.id)
-        related_store_url = STORE_BASE_URLS.get(related_store_id, "")
-        if related_store_id in ["1", "2"]:
-            related.image_url = related.img_url if related.img_url.startswith('http') else related_store_url + related.img_url
-        else:
-            related.image_url = related.img_url
-        related.price_int = int(related.price)
+    # 初始相關商品（前 5 個，排除當前商品）
+    similar_products_df = most_similar_filter(product.name, top_n=40)
+    related_products = []
+    for _, row in similar_products_df.iterrows():
+        related_id = int(row['id'])
+        if related_id == product.id:
+            continue
+        try:
+            related = Product.objects.get(id=related_id)
+            related_store_id = str(related.store.id)
+            related_base_url = STORE_BASE_URLS.get(related_store_id, "")
+            related.image_url = process_image_url(related.img_url, related_store_id, related_base_url)
+            related.price_int = int(float(related.price)) if related.price is not None else 0
+            related_products.append(related)
+        except Product.DoesNotExist:
+            continue
+        if len(related_products) >= 5:
+            break
 
-    # 熱門標籤
+    # 推薦商品（前 30 個，排除當前商品和 related_products）
+    recommended_products = []
+    for _, row in similar_products_df.iterrows():
+        recommended_id = int(row['id'])
+        if recommended_id == product.id:
+            continue
+        if recommended_id in [p.id for p in related_products]:
+            continue
+        try:
+            recommended = Product.objects.get(id=recommended_id)
+            recommended_store_id = str(recommended.store.id)
+            recommended_base_url = STORE_BASE_URLS.get(recommended_store_id, "")
+            recommended.image_url = process_image_url(recommended.img_url, recommended_store_id, recommended_base_url)
+            recommended.price_int = int(float(recommended.price)) if recommended.price is not None else 0
+            recommended_products.append(recommended)
+        except Product.DoesNotExist:
+            continue
+        if len(recommended_products) >= 30:
+            break
+
+    # 處理 hot_tags 的 image_url
     popular_products = FollowedProduct.objects.values('product').annotate(
         follow_count=Count('id')
     ).order_by('-follow_count')[:10]
@@ -361,12 +398,20 @@ def product(request, product_id):
     hot_tags = Product.objects.filter(id__in=product_ids)
     hot_tags = random.sample(list(hot_tags), min(5, len(hot_tags)))
 
-    categories = [{'value': v, 'name': n} for v, n in VALUE_TO_CATEGORY.items()]
+    for tag in hot_tags:
+        tag_store_id = str(tag.store.id)
+        tag_base_url = STORE_BASE_URLS.get(tag_store_id, "")
+        tag.image_url = process_image_url(tag.img_url, tag_store_id, tag_base_url)
+
+    # 商品分類
+    categories = Product.objects.values('value').distinct().order_by('value')
+    categories = [{'value': cat['value'], 'name': cat['value']} for cat in categories if cat['value'] is not None]
 
     return render(request, 'product.html', {
         'product': product,
         'is_followed': is_followed,
         'related_products': related_products,
+        'recommended_products': recommended_products,
         'hot_tags': hot_tags,
         'categories': categories
     })
@@ -374,58 +419,117 @@ def product(request, product_id):
 def load_more_related_products(request):
     product_id = request.GET.get('product_id')
     offset = int(request.GET.get('offset', 5))
-    product = get_object_or_404(Product, id=product_id)
-    
-    related_products = Product.objects.filter(value=product.value).exclude(id=product.id).order_by('?')[offset:offset + 5]
-    product_list = []
-    for related in related_products:
-        store_id = str(related.store.id)
-        store_url = STORE_BASE_URLS.get(store_id, "")
-        if store_id in ["1", "2"]:  # 家樂福和 Costco
-            image_url = related.img_url if related.img_url.startswith('http') else store_url + related.img_url
-        else:  # 寶雅 (3) 和大買家 (4)
-            image_url = related.img_url
-        product_data = {
-            'id': related.id,
-            'name': related.name,
-            'price': int(related.price),
-            'image_url': image_url
-        }
-        product_list.append(product_data)
+    product = get_object_or_404(Product, id=int(product_id))
 
-    return JsonResponse({'related_products': product_list})
+
+    similar_products_df = most_similar_filter(product.name, top_n=offset + 5)
+    related_products = []
+    for index, row in similar_products_df.iterrows():
+        related_id = int(row['id'])
+        if related_id == product.id:
+            continue
+        try:
+            related = Product.objects.get(id=related_id)
+            related_store_id = str(related.store.id)
+            related_base_url = STORE_BASE_URLS.get(related_store_id, "")
+            related.image_url = process_image_url(related.img_url, related_store_id, related_base_url)
+            related.price_int = int(float(related.price)) if related.price is not None else 0
+            related_products.append({
+                'id': related.id,
+                'name': related.name,
+                'image_url': related.image_url,
+                'price': related.price_int
+            })
+        except Product.DoesNotExist:
+            continue
+
+    related_products = related_products[offset-5:offset] if len(related_products) > offset else related_products[offset-5:]
+    return JsonResponse({'related_products': related_products})
 
 # 關注清單視圖
 def care(request):
     uid = request.session.get('firebase_uid')
     user_email = request.session.get('user_email')
 
+    # 篩選參數
+    store_filter = request.GET.get('store', '')
+    category_filter = request.GET.get('category', '')
+
+    # 處理關注商品
     if user_email and uid:
-        followed_products = FollowedProduct.objects.filter(user_id=uid).order_by('-followed_at')  # 按 followed_at 降序排序
+        followed_products = FollowedProduct.objects.filter(user_id=uid).order_by('-followed_at')
+        
+        # 應用篩選
+        if store_filter:
+            followed_products = followed_products.filter(product__store__id=store_filter)
+        if category_filter:
+            followed_products = followed_products.filter(product__value=category_filter)
+
         for followed in followed_products:
             store_id = str(followed.product.store.id)
-            store_url = STORE_BASE_URLS.get(store_id, "")
-            if store_id in ["1", "2"]:  # 家樂福和 Costco
-                followed.product.image_url = followed.product.img_url if followed.product.img_url.startswith('http') else store_url + followed.product.img_url
-            else:  # 寶雅 (3) 和大買家 (4)
-                followed.product.image_url = followed.product.img_url
-            followed.product.product_url = followed.product.product_url if followed.product.product_url.startswith('http') else store_url + followed.product.product_url
-            followed.product.price = int(followed.product.price)
+            store_base_url = STORE_BASE_URLS.get(store_id, "")
+            followed.product.image_url = process_image_url(followed.product.img_url, store_id, store_base_url)
+            followed.product.product_url = followed.product.product_url if followed.product.product_url and followed.product.product_url.startswith('http') else store_base_url + (followed.product.product_url or '')
+            followed.product.price_int = int(float(followed.product.price)) if followed.product.price is not None else 0
     else:
         followed_products = []
 
-    categories = [{'value': v, 'name': n} for v, n in VALUE_TO_CATEGORY.items()]
+    # 基於用戶關注歷史的推薦（使用 myapp_recommand_list）
+    recommended_products = []
+    if uid:
+        # 從 myapp_recommand_list 中獲取用戶的推薦商品
+        conn = sqlite3.connect('db.sqlite3')
+        cursor = conn.cursor()
+        cursor.execute("SELECT product_id FROM myapp_recommand_list WHERE user_id = ? LIMIT 30", (uid,))
+        recommended_ids = [row[0] for row in cursor.fetchall()]
+        conn.close()
+
+        # 根據推薦的 product_id 查詢商品詳情
+        for prod_id in recommended_ids:
+            try:
+                recommended = Product.objects.get(id=prod_id)
+                recommended_store_id = str(recommended.store.id)
+                recommended_base_url = STORE_BASE_URLS.get(recommended_store_id, "")
+                recommended.image_url = process_image_url(recommended.img_url, recommended_store_id, recommended_base_url)
+                recommended.price_int = int(float(recommended.price)) if recommended.price is not None else 0
+                recommended_products.append(recommended)
+            except Product.DoesNotExist:
+                continue
+
+    # 如果用戶未登入或無推薦商品，隨機選擇一些熱門商品
+    if not recommended_products:
+        popular_products = Product.objects.annotate(follow_count=Count('followedproduct')).order_by('-follow_count')[:30]
+        for prod in popular_products:
+            store_id = str(prod.store.id)
+            store_base_url = STORE_BASE_URLS.get(store_id, "")
+            prod.image_url = process_image_url(prod.img_url, store_id, store_base_url)
+            prod.price_int = int(float(prod.price)) if prod.price is not None else 0
+            recommended_products.append(prod)
+
+    # 分類選項
+    categories = Product.objects.values('value').distinct().order_by('value')
+    categories = [{'value': cat['value'], 'name': cat['value']} for cat in categories if cat['value'] is not None]
+
+    # 商店選項
+    stores = [
+        {'id': '1', 'name': '家樂福'},
+        {'id': '2', 'name': 'Costco'},
+        {'id': '3', 'name': '寶雅'},
+        {'id': '4', 'name': '大買家'},
+    ]
 
     return render(request, 'care.html', {
         'followed_products': followed_products,
-        'categories': categories
+        'recommended_products': recommended_products,  # 新增推薦商品
+        'categories': categories,
+        'stores': stores,
+        'selected_store': store_filter,
+        'selected_category': category_filter,
     })
-
 
 def hot(request):
     uid = request.session.get('firebase_uid')
 
-    # 熱門商品（根據關注數排序）
     popular_products = FollowedProduct.objects.values('product').annotate(
         follow_count=Count('id')
     ).order_by('-follow_count')[:10]
@@ -433,21 +537,54 @@ def hot(request):
     hot_products = Product.objects.filter(id__in=product_ids)
     
     for product in hot_products:
-        store_id = str(product.store.id)
+        store_id = str(product.store_id)
         store_url = STORE_BASE_URLS.get(store_id, "")
-        if store_id in ["1", "2"]:  # 家樂福和 Costco
+        if store_id in ["1", "2"]:
             product.image_url = product.img_url if product.img_url.startswith('http') else store_url + product.img_url
-        else:  # 寶雅 (3) 和大買家 (4)
+        else:
             product.image_url = product.img_url
-        product.price_int = int(product.price)  # 移除小數點
+        product.price_int = int(product.price)
         product.is_followed = FollowedProduct.objects.filter(user_id=uid, product=product).exists() if uid else False
 
-    # 熱門標籤
+    # 處理 hot_tags 的 image_url
     hot_tags = random.sample(list(hot_products), min(5, len(hot_products)))
-    categories = [{'value': v, 'name': n} for v, n in VALUE_TO_CATEGORY.items()]
+    for tag in hot_tags:
+        store_id = str(tag.store_id)
+        store_url = STORE_BASE_URLS.get(store_id, "")
+        if store_id in ["1", "2"]:
+            tag.image_url = tag.img_url if tag.img_url.startswith('http') else store_url + tag.img_url
+        else:
+            tag.image_url = tag.img_url
+
+    categories = Product.objects.values('value').distinct().order_by('value')
+    categories = [{'value': cat['value'], 'name': cat['value']} for cat in categories]
 
     return render(request, 'hot.html', {
         'hot_products': hot_products,
         'hot_tags': hot_tags,
         'categories': categories
     })
+
+@csrf_exempt
+def contact_view(request):
+    if request.method == 'POST':
+        if not request.session.get('user_email'):
+            return JsonResponse({'success': False, 'error': '請先登入'})
+
+        user_email = request.session['user_email']  # 發件人
+        message = request.POST.get('message')
+        recipient_list = settings.CUSTOMER_SERVICE_EMAILS  # 從 settings 讀取
+
+        try:
+            send_mail(
+                subject='來自用戶的客服問題',
+                message=f'用戶 {user_email} 提交的問題：\n\n{message}',
+                from_email=user_email,
+                recipient_list=recipient_list,
+                fail_silently=False,
+            )
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': '無效的請求'})

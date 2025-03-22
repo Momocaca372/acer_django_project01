@@ -8,7 +8,7 @@
 {% block content %}
 <div class="subpage-container">
     <section class="subpage-row">
-        <!-- 搜索區，位於導航列下面 -->
+        <!-- 搜索區 -->
         <div class="subpage-search-container">
             <div class="subpage-search-bar">
                 <form method="GET" action="{% url 'search' %}">
@@ -22,14 +22,18 @@
                 <p class="subpage-search-label">熱門搜尋</p>
                 <div class="subpage-tags">
                     {% for tag in hot_tags %}
-                        <a href="{% url 'search' %}?q={{ tag.name }}" class="subpage-tag">{{ tag.name|truncatechars:10 }}</a>
+                        <a href="{% url 'search' %}?q={{ tag.name }}" class="subpage-tag">
+                            <img src="{{ tag.image_url|default:'/static/default_image.png' }}" alt="{{ tag.name }}" class="hot-tag-image">
+                        </a>
+                    {% empty %}
+                        <p>暫無熱門標籤</p>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 商品分類、熱門商品、AI客服區域，從左到右排列 -->
+    <!-- 商品分類與熱門商品 -->
     <section class="subpage-content-container">
         <div class="subpage-row">
             <aside class="subpage-sidebar">
@@ -43,55 +47,37 @@
                 </ul>
             </aside>
             <main class="subpage-content">
-                <h1>熱門商品</h1>
-                <div class="subpage-products">
+                <div class="subpage-products" id="product-list">
                     {% for product in hot_products %}
-                        <div class="hot-product-item">
-                            <a href="{% url 'search' %}?q={{ product.name }}" class="product-link">
-                                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-img">
-                            </a>
-                            <div class="product-info">
-                                <span class="product-name">{{ product.name }}</span>
-                                <div class="product-details">
+                        <div class="subpage-product-item">
+                            <a href="{% url 'product' product.id %}" class="product-link">
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                                <p>{{ product.name }}</p>
+                                <p class="price-container">
                                     <span class="product-price">$ {{ product.price_int }}</span>
                                     <button class="follow-btn" data-product-id="{{ product.id }}" title="{% if product.is_followed %}取消關注{% else %}關注商品{% endif %}">
                                         <span class="heart-icon {% if product.is_followed %}followed{% endif %}"></span>
                                     </button>
-                                </div>
-                            </div>
+                                </p>
+                            </a>
                         </div>
                     {% endfor %}
                 </div>
             </main>
-            <aside class="subpage-ai-service">
-                <h1>AI客服</h1>
-                <iframe
-                    allow="microphone;"
-                    width="100%"
-                    height="400"
-                    style="border: none; border-radius: 10px;"
-                    src="https://console.dialogflow.com/api-client/demo/embedded/0f7ba45a-cdd0-4fe3-b692-545a9dbd30bf">
-                </iframe>
-            </aside>
         </div>
     </section>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block extra_scripts %}
 <script>
     $(document).ready(function() {
-        console.log("jQuery loaded");
-
-        $('.follow-btn').on('click', function(e) {
+        // 關注/取消關注功能
+        $(document).on('click', '.follow-btn', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log("Follow button clicked");
-
             var productId = $(this).data('product-id');
             var $heart = $(this).find('.heart-icon');
             var $button = $(this);
-
-            console.log("Product ID:", productId);
 
             $.ajax({
                 url: '/myapp/follow_product/',
@@ -101,25 +87,18 @@
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 },
                 success: function(response) {
-                    console.log("AJAX response:", response);
                     if (response.success) {
                         if (response.followed) {
                             $heart.addClass('followed');
                             $button.attr('title', '取消關注');
-                            console.log("Heart updated to red");
                         } else {
                             $heart.removeClass('followed');
                             $button.attr('title', '關注商品');
-                            console.log("Heart updated to transparent");
                         }
-                    } else {
-                        console.log("Follow action failed:", response.message);
                     }
                 },
-                error: function(xhr, status, error) {
-                    console.error("AJAX error:", xhr.status, xhr.responseText);
+                error: function(xhr) {
                     if (xhr.status === 401) {
-                        console.log("Unauthorized, redirecting to login");
                         window.location.href = '/myapp/login/?next=' + encodeURIComponent(window.location.pathname);
                     } else {
                         alert('操作失敗，請稍後再試。');
@@ -129,4 +108,5 @@
         });
     });
 </script>
+{% endblock %}
 {% endblock %}

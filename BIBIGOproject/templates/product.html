@@ -22,7 +22,11 @@
                 <p class="product-search-label">熱門搜尋</p>
                 <div class="product-tags">
                     {% for tag in hot_tags %}
-                        <a href="{% url 'search' %}?q={{ tag.name }}" class="product-tag">{{ tag.name|truncatechars:10 }}</a>
+                        <a href="{% url 'search' %}?q={{ tag.name }}" class="product-tag">
+                            <img src="{{ tag.image_url|default:'/static/default_image.png' }}" alt="{{ tag.name }}" class="hot-tag-image">
+                        </a>
+                    {% empty %}
+                        <p>暫無熱門標籤</p>
                     {% endfor %}
                 </div>
             </div>
@@ -56,11 +60,40 @@
                     </div>
                 </div>
                 <section class="store-pricing">
+                    <!-- 推薦商品區域 -->
+                    <div class="recommended-products">
+                        <h3>你可能會喜歡</h3>
+                        <div class="recommended-container">
+                            <button class="nav-btn prev-btn" disabled>◄</button>
+                            <div class="recommended-list" id="recommended-list">
+                                <!-- 初始顯示第一批 -->
+                                {% for recommended in recommended_products|slice:":6" %}
+                                    <div class="recommended-item">
+                                        <a href="{% url 'product' recommended.id %}" class="recommended-link">
+                                            <img src="{{ recommended.image_url }}" alt="{{ recommended.name }}">
+                                            <div class="recommended-info">
+                                                <span class="recommended-name">{{ recommended.name }}</span>
+                                                <span class="recommended-price">$ {{ recommended.price_int }}</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <button class="nav-btn next-btn">►</button>
+                        </div>
+                    </div>
                     <h3>店家價格</h3>
                     <div class="store-list">
                         <div class="store-item">
                             <span class="rank">1</span>
-                            <img src="{% if product.store.id == '1' %}{% static '家樂福LOGO.jpg' %}{% elif product.store.id == '2' %}{% static 'COSTCO.png' %}{% elif product.store.id == '3' %}{% static '寶雅LOGO.jpg' %}{% elif product.store.id == '4' %}{% static '大買家LOGO.png' %}{% endif %}" alt="{{ product.store.name }} LOGO" class="store-logo">
+                            {% with store_id=product.store.id|stringformat:"s" %}
+                                <img src="{% if store_id == '1' %}{% static '家樂福LOGO.jpg' %}
+                                          {% elif store_id == '2' %}{% static 'COSTCO.png' %}
+                                          {% elif store_id == '3' %}{% static '寶雅LOGO.jpg' %}
+                                          {% elif store_id == '4' %}{% static '大買家LOGO.png' %}
+                                          {% else %}{% static 'default_logo.png' %}{% endif %}" 
+                                     alt="{{ product.store.name }} LOGO" class="store-logo">
+                            {% endwith %}
                             <span class="product-name">{{ product.name }}</span>
                             <span class="product-price">$ {{ product.price_int }}</span>
                             <a href="{{ product.product_url }}" target="_blank" class="buy-btn">購買</a>
@@ -70,7 +103,7 @@
             </main>
 
             <aside class="related-products">
-                <h3>搜尋的其他物品</h3>
+                <h3>推薦商品</h3>
                 <div class="product-list" id="related-product-list">
                     {% for related in related_products %}
                         <div class="product-item">
@@ -143,7 +176,7 @@
         });
 
         // 相關商品載入更多功能
-        let relatedOffset = 5; // 初始顯示 5 個後開始
+        let relatedOffset = 10;
         let relatedLoading = false;
 
         $(window).scroll(function() {
@@ -185,6 +218,65 @@
                 });
             }
         });
+
+        // 推薦商品左右切換功能
+        const recommendedProducts = [
+            {% for recommended in recommended_products %}
+                {
+                    id: {{ recommended.id }},
+                    name: "{{ recommended.name }}",
+                    image_url: "{{ recommended.image_url }}",
+                    price: {{ recommended.price_int }}
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const itemsPerPage = 6;
+        const totalItems = recommendedProducts.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        let currentPage = 1;
+
+        function updateRecommendedList() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const currentItems = recommendedProducts.slice(start, end);
+
+            $('#recommended-list').empty();
+            currentItems.forEach(function(item) {
+                const itemHtml = `
+                    <div class="recommended-item">
+                        <a href="/myapp/product/${item.id}/" class="recommended-link">
+                            <img src="${item.image_url}" alt="${item.name}">
+                            <div class="recommended-info">
+                                <span class="recommended-name">${item.name}</span>
+                                <span class="recommended-price">$ ${item.price}</span>
+                            </div>
+                        </a>
+                    </div>`;
+                $('#recommended-list').append(itemHtml);
+            });
+
+            // 更新按鈕狀態
+            $('.prev-btn').prop('disabled', currentPage === 1);
+            $('.next-btn').prop('disabled', currentPage === totalPages);
+        }
+
+        $('.next-btn').on('click', function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateRecommendedList();
+            }
+        });
+
+        $('.prev-btn').on('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                updateRecommendedList();
+            }
+        });
+
+        // 初始更新
+        updateRecommendedList();
     });
 </script>
 {% endblock %}
