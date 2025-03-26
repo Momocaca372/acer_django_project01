@@ -54,7 +54,7 @@
                     {% for value, name, image_path in categories %}
                         <div class="subpage-product-item">
                             <a href="{% url 'subpage' %}?category={{ value }}" class="product-link">
-                                <img src="{% static image_path %}" alt="{{ name }}" style="max-width: 100px;">
+                                <img src="{% static image_path %}" alt="{{ name }}">
                                 <p>{{ name }}</p>
                             </a>
                         </div>

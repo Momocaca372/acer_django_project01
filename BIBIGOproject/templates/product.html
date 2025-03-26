@@ -48,15 +48,17 @@
 
             <main class="product-content">
                 <div class="product-image-container">
-                    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-img">
+                    <div class="product-image-wrapper">
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-img">
+                        <div class="follow-btn-container">
+                            <button class="follow-btn" data-product-id="{{ product.id }}" title="{% if is_followed %}取消關注{% else %}關注商品{% endif %}">
+                                <span class="heart-icon {% if is_followed %}followed{% endif %}"></span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="product-details">
                         <h2>{{ product.name }}</h2>
                         <p class="product-price">$ {{ product.price_int }}</p>
-                    </div>
-                    <div class="follow-btn-container">
-                        <button class="follow-btn" data-product-id="{{ product.id }}" title="{% if is_followed %}取消關注{% else %}關注商品{% endif %}">
-                            <span class="heart-icon {% if is_followed %}followed{% endif %}"></span>
-                        </button>
                     </div>
                 </div>
                 <section class="store-pricing">
@@ -64,10 +66,10 @@
                     <div class="recommended-products">
                         <h3>你可能會喜歡</h3>
                         <div class="recommended-container">
-                            <button class="nav-btn prev-btn" disabled>◄</button>
                             <div class="recommended-list" id="recommended-list">
-                                <!-- 初始顯示第一批 -->
-                                {% for recommended in recommended_products|slice:":6" %}
+                                <button class="nav-btn prev-btn" disabled>◄</button>
+                                <!-- 初始顯示前 5 個 -->
+                                {% for recommended in recommended_products|slice:":5" %}
                                     <div class="recommended-item">
                                         <a href="{% url 'product' recommended.id %}" class="recommended-link">
                                             <img src="{{ recommended.image_url }}" alt="{{ recommended.name }}">
@@ -78,8 +80,8 @@
                                         </a>
                                     </div>
                                 {% endfor %}
+                                <button class="nav-btn next-btn">►</button>
                             </div>
-                            <button class="nav-btn next-btn">►</button>
                         </div>
                     </div>
                     <h3>店家價格</h3>
@@ -231,7 +233,7 @@
             {% endfor %}
         ];
 
-        const itemsPerPage = 6;
+        const itemsPerPage = 5;
         const totalItems = recommendedProducts.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
         let currentPage = 1;
@@ -242,6 +244,7 @@
             const currentItems = recommendedProducts.slice(start, end);
 
             $('#recommended-list').empty();
+            $('#recommended-list').append('<button class="nav-btn prev-btn" ' + (currentPage === 1 ? 'disabled' : '') + '>◄</button>');
             currentItems.forEach(function(item) {
                 const itemHtml = `
                     <div class="recommended-item">
@@ -255,20 +258,17 @@
                     </div>`;
                 $('#recommended-list').append(itemHtml);
             });
-
-            // 更新按鈕狀態
-            $('.prev-btn').prop('disabled', currentPage === 1);
-            $('.next-btn').prop('disabled', currentPage === totalPages);
+            $('#recommended-list').append('<button class="nav-btn next-btn" ' + (currentPage === totalPages ? 'disabled' : '') + '>►</button>');
         }
 
-        $('.next-btn').on('click', function() {
+        $(document).on('click', '.next-btn', function() {
             if (currentPage < totalPages) {
                 currentPage++;
                 updateRecommendedList();
             }
         });
 
-        $('.prev-btn').on('click', function() {
+        $(document).on('click', '.prev-btn', function() {
             if (currentPage > 1) {
                 currentPage--;
                 updateRecommendedList();

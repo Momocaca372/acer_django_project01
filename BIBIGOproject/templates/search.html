@@ -24,8 +24,6 @@
                     {% for tag in hot_tags %}
                         <a href="{% url 'search' %}?q={{ tag.name }}" class="subpage-tag">
                             <img src="{{ tag.image_url|default:'/static/default_image.png' }}" alt="{{ tag.name }}" class="hot-tag-image">
-                            <!-- 調試用：顯示圖片 URL -->
-                            <span style="font-size: 10px; color: #999;">{{ tag.image_url }}</span>
                         </a>
                     {% empty %}
                         <p>暫無熱門標籤</p>
@@ -60,14 +58,14 @@
                         {% for product in products %}
                             <div class="subpage-product-item">
                                 <a href="{% url 'product' product.id %}" class="product-link">
-                                    <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width: 100px;">
+                                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
                                     <p>{{ product.name }}</p>
-                                    <p class="price-container">
+                                    <div class="price-container">
                                         <span class="product-price">$ {{ product.price_int }}</span>
                                         <button class="follow-btn" data-product-id="{{ product.id }}" title="{% if product.is_followed %}取消關注{% else %}關注商品{% endif %}">
                                             <span class="heart-icon {% if product.is_followed %}followed{% endif %}"></span>
                                         </button>
-                                    </p>
+                                    </div>
                                 </a>
                             </div>
                         {% endfor %}
@@ -84,9 +82,9 @@
 {% block extra_scripts %}
 <script>
     $(document).ready(function() {
-        let offset = 20; // 從第 21 個開始，因為初始顯示 20 個
+        let offset = 20;
         let loading = false;
-        const query = '{{ query|escapejs }}'; // 從當前搜尋關鍵字獲取
+        const query = '{{ query|escapejs }}';
 
         // 關注/取消關注功能
         $(document).on('click', '.follow-btn', function(e) {
@@ -124,7 +122,7 @@
             });
         });
 
-        // 載入更多功能 - 改進觸發條件
+        // 載入更多功能
         $(window).on('scroll', function() {
             const $productList = $('#product-list');
             const scrollBottom = $(window).scrollTop() + $(window).height();
@@ -148,14 +146,14 @@
                                 const productHtml = `
                                     <div class="subpage-product-item">
                                         <a href="/myapp/product/${product.id}/" class="product-link">
-                                            <img src="${product.image_url}" alt="${product.name}" style="max-width: 100px;">
+                                            <img src="${product.image_url}" alt="${product.name}">
                                             <p>${product.name}</p>
-                                            <p class="price-container">
+                                            <div class="price-container">
                                                 <span class="product-price">$ ${product.price}</span>
                                                 <button class="follow-btn" data-product-id="${product.id}" title="${product.is_followed ? '取消關注' : '關注商品'}">
                                                     <span class="heart-icon ${product.is_followed ? 'followed' : ''}"></span>
                                                 </button>
-                                            </p>
+                                            </div>
                                         </a>
                                     </div>`;
                                 $('#product-list').append(productHtml);

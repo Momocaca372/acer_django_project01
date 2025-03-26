@@ -16,5 +16,6 @@ urlpatterns = [
     path('hot/', views.hot, name='hot'),
     path('load-more-products/', views.load_more_products, name='load_more_products'),
     path('load_more_related_products/', views.load_more_related_products, name='load_more_related_products'),
-    path('contact_view/', views.contact_view, name='contact_view')
+    path('contact_view/', views.contact_view, name='contact_view'),
+    path('createvec/', views.create_vec_view, name='create_vec_view'),
 ]

@@ -11,8 +11,12 @@ import random
 import logging
 import sqlite3
 from django.core.mail import send_mail
-from bigdata_final import most_similar_filter
+from myapp.utils.bigdata_final import most_similar_filter , create_Word2Vec ,recommand_list_generator
 from django.conf import settings
+from functools import wraps
+from pathlib import Path
+import joblib
+from gensim.models import Word2Vec
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +26,22 @@ STORE_BASE_URLS = {
     "3": "https://www.poyabuy.com.tw",
     "4": "https://www.savesafe.com.tw/Products/"
 }
+
+# 設定路徑
+path = Path(__file__).resolve().parent.parent
+
+# 預載入資料
+df_product = joblib.load(path / "static/df_product.pkl")
+vectorizer = Word2Vec.load(str(path / "static/Word2Vec.pkl"))
+
+def preload_bigdata(func):
+    @wraps(func)
+    def wrapper(request, *args, **kwargs):
+
+        request.df_product = df_product
+        request.vectorizer = vectorizer
+        return func(request, *args, **kwargs)
+    return wrapper
 
 # 統一圖片處理邏輯
 def process_image_url(img_url, store_id, store_base_url):
@@ -161,7 +181,7 @@ def search(request):
     hot_tags = Product.objects.filter(id__in=product_ids)
     hot_tags = random.sample(list(hot_tags), min(5, len(hot_tags)))
 
-    # 為 hot_tags 添加 image_url（與 products 一致）
+    # 為 hot_tags 添加 image_url
     for tag in hot_tags:
         store_id = str(tag.store_id)
         store_url = STORE_BASE_URLS.get(store_id, "")
@@ -338,6 +358,7 @@ def follow_product(request):
     return JsonResponse({'success': False, 'message': '無效請求'})
 
 # 商品詳情視圖
+@preload_bigdata
 def product(request, product_id):
     product = get_object_or_404(Product, id=int(product_id))
     uid = request.session.get('firebase_uid')
@@ -415,7 +436,8 @@ def product(request, product_id):
         'hot_tags': hot_tags,
         'categories': categories
     })
-
+    
+@preload_bigdata
 def load_more_related_products(request):
     product_id = request.GET.get('product_id')
     offset = int(request.GET.get('offset', 5))
@@ -447,6 +469,7 @@ def load_more_related_products(request):
     return JsonResponse({'related_products': related_products})
 
 # 關注清單視圖
+@preload_bigdata
 def care(request):
     uid = request.session.get('firebase_uid')
     user_email = request.session.get('user_email')
@@ -588,3 +611,10 @@ def contact_view(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': '無效的請求'})
+
+def create_vec_view(request):
+    try:
+        create_Word2Vec()
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"success": False})

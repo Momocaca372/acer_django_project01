@@ -55,7 +55,7 @@
                     {% for product in hot_products %}
                         <div class="subpage-product-item">
                             <a href="{% url 'product' product.id %}" class="product-link">
-                                <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width: 100px;">
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}"> <!-- 移除 style="max-width: 100px;" -->
                                 <p>{{ product.name }}</p>
                                 <p class="price-container">
                                     <span class="product-price">$ {{ product.price_int }}</span>

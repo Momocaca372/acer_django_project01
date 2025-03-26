@@ -62,10 +62,10 @@
                     <div class="recommended-products">
                         <h3>你可能會喜歡</h3>
                         <div class="recommended-container">
-                            <button class="nav-btn prev-btn" disabled>◄</button>
                             <div class="recommended-list" id="recommended-list">
-                                <!-- 初始顯示第一批（10 個） -->
-                                {% for recommended in recommended_products|slice:":10" %}
+                                <button class="nav-btn prev-btn" disabled>◄</button>
+                                <!-- 初始顯示前 5 個 -->
+                                {% for recommended in recommended_products|slice:":5" %}
                                     <div class="recommended-item">
                                         <a href="{% url 'product' recommended.id %}" class="recommended-link">
                                             <img src="{{ recommended.image_url }}" alt="{{ recommended.name }}">
@@ -76,8 +76,8 @@
                                         </a>
                                     </div>
                                 {% endfor %}
+                                <button class="nav-btn next-btn">►</button>
                             </div>
-                            <button class="nav-btn next-btn">►</button>
                         </div>
                     </div>
 
@@ -182,7 +182,7 @@
             {% endfor %}
         ];
 
-        const itemsPerPage = 10; // 每批顯示 10 個商品
+        const itemsPerPage = 5; // 每頁顯示 5 個商品
         const totalItems = recommendedProducts.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
         let currentPage = 1;
@@ -193,6 +193,7 @@
             const currentItems = recommendedProducts.slice(start, end);
 
             $('#recommended-list').empty();
+            $('#recommended-list').append('<button class="nav-btn prev-btn" ' + (currentPage === 1 ? 'disabled' : '') + '>◄</button>');
             currentItems.forEach(function(item) {
                 const itemHtml = `
                     <div class="recommended-item">
@@ -206,20 +207,17 @@
                     </div>`;
                 $('#recommended-list').append(itemHtml);
             });
-
-            // 更新按鈕狀態
-            $('.prev-btn').prop('disabled', currentPage === 1);
-            $('.next-btn').prop('disabled', currentPage === totalPages);
+            $('#recommended-list').append('<button class="nav-btn next-btn" ' + (currentPage === totalPages ? 'disabled' : '') + '>►</button>');
         }
 
-        $('.next-btn').on('click', function() {
+        $(document).on('click', '.next-btn', function() {
             if (currentPage < totalPages) {
                 currentPage++;
                 updateRecommendedList();
             }
         });
 
-        $('.prev-btn').on('click', function() {
+        $(document).on('click', '.prev-btn', function() {
             if (currentPage > 1) {
                 currentPage--;
                 updateRecommendedList();
