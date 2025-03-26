@@ -121,7 +121,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",  # 指向專案根目錄下的 static 資料夾
 ]
-STATIC_ROOT = BASE_DIR / "staticfiles"  # 收集靜態檔案的目標目錄
+STATIC_ROOT = BASE_DIR / "static"  # 收集靜態檔案的目標目錄
 
 django_heroku.settings(locals())
 

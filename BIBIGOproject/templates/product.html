@@ -22,7 +22,11 @@
                 <p class="product-search-label">熱門搜尋</p>
                 <div class="product-tags">
                     {% for tag in hot_tags %}
-                        <a href="{% url 'search' %}?q={{ tag.name }}" class="product-tag">{{ tag.name|truncatechars:10 }}</a>
+                        <a href="{% url 'search' %}?q={{ tag.name }}" class="product-tag">
+                            <img src="{{ tag.image_url|default:'/static/default_image.png' }}" alt="{{ tag.name }}" class="hot-tag-image">
+                        </a>
+                    {% empty %}
+                        <p>暫無熱門標籤</p>
                     {% endfor %}
                 </div>
             </div>
@@ -44,23 +48,54 @@
 
             <main class="product-content">
                 <div class="product-image-container">
-                    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-img">
+                    <div class="product-image-wrapper">
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-img">
+                        <div class="follow-btn-container">
+                            <button class="follow-btn" data-product-id="{{ product.id }}" title="{% if is_followed %}取消關注{% else %}關注商品{% endif %}">
+                                <span class="heart-icon {% if is_followed %}followed{% endif %}"></span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="product-details">
                         <h2>{{ product.name }}</h2>
                         <p class="product-price">$ {{ product.price_int }}</p>
                     </div>
-                    <div class="follow-btn-container">
-                        <button class="follow-btn" data-product-id="{{ product.id }}" title="{% if is_followed %}取消關注{% else %}關注商品{% endif %}">
-                            <span class="heart-icon {% if is_followed %}followed{% endif %}"></span>
-                        </button>
-                    </div>
                 </div>
                 <section class="store-pricing">
+                    <!-- 推薦商品區域 -->
+                    <div class="recommended-products">
+                        <h3>你可能會喜歡</h3>
+                        <div class="recommended-container">
+                            <div class="recommended-list" id="recommended-list">
+                                <button class="nav-btn prev-btn" disabled>◄</button>
+                                <!-- 初始顯示前 5 個 -->
+                                {% for recommended in recommended_products|slice:":5" %}
+                                    <div class="recommended-item">
+                                        <a href="{% url 'product' recommended.id %}" class="recommended-link">
+                                            <img src="{{ recommended.image_url }}" alt="{{ recommended.name }}">
+                                            <div class="recommended-info">
+                                                <span class="recommended-name">{{ recommended.name }}</span>
+                                                <span class="recommended-price">$ {{ recommended.price_int }}</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                                <button class="nav-btn next-btn">►</button>
+                            </div>
+                        </div>
+                    </div>
                     <h3>店家價格</h3>
                     <div class="store-list">
                         <div class="store-item">
                             <span class="rank">1</span>
-                            <img src="{% if product.store.id == '1' %}{% static '家樂福LOGO.jpg' %}{% elif product.store.id == '2' %}{% static 'COSTCO.png' %}{% elif product.store.id == '3' %}{% static '寶雅LOGO.jpg' %}{% elif product.store.id == '4' %}{% static '大買家LOGO.png' %}{% endif %}" alt="{{ product.store.name }} LOGO" class="store-logo">
+                            {% with store_id=product.store.id|stringformat:"s" %}
+                                <img src="{% if store_id == '1' %}{% static '家樂福LOGO.jpg' %}
+                                          {% elif store_id == '2' %}{% static 'COSTCO.png' %}
+                                          {% elif store_id == '3' %}{% static '寶雅LOGO.jpg' %}
+                                          {% elif store_id == '4' %}{% static '大買家LOGO.png' %}
+                                          {% else %}{% static 'default_logo.png' %}{% endif %}" 
+                                     alt="{{ product.store.name }} LOGO" class="store-logo">
+                            {% endwith %}
                             <span class="product-name">{{ product.name }}</span>
                             <span class="product-price">$ {{ product.price_int }}</span>
                             <a href="{{ product.product_url }}" target="_blank" class="buy-btn">購買</a>
@@ -70,7 +105,7 @@
             </main>
 
             <aside class="related-products">
-                <h3>搜尋的其他物品</h3>
+                <h3>推薦商品</h3>
                 <div class="product-list" id="related-product-list">
                     {% for related in related_products %}
                         <div class="product-item">
@@ -143,7 +178,7 @@
         });
 
         // 相關商品載入更多功能
-        let relatedOffset = 5; // 初始顯示 5 個後開始
+        let relatedOffset = 10;
         let relatedLoading = false;
 
         $(window).scroll(function() {
@@ -185,6 +220,63 @@
                 });
             }
         });
+
+        // 推薦商品左右切換功能
+        const recommendedProducts = [
+            {% for recommended in recommended_products %}
+                {
+                    id: {{ recommended.id }},
+                    name: "{{ recommended.name }}",
+                    image_url: "{{ recommended.image_url }}",
+                    price: {{ recommended.price_int }}
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const itemsPerPage = 5;
+        const totalItems = recommendedProducts.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        let currentPage = 1;
+
+        function updateRecommendedList() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const currentItems = recommendedProducts.slice(start, end);
+
+            $('#recommended-list').empty();
+            $('#recommended-list').append('<button class="nav-btn prev-btn" ' + (currentPage === 1 ? 'disabled' : '') + '>◄</button>');
+            currentItems.forEach(function(item) {
+                const itemHtml = `
+                    <div class="recommended-item">
+                        <a href="/myapp/product/${item.id}/" class="recommended-link">
+                            <img src="${item.image_url}" alt="${item.name}">
+                            <div class="recommended-info">
+                                <span class="recommended-name">${item.name}</span>
+                                <span class="recommended-price">$ ${item.price}</span>
+                            </div>
+                        </a>
+                    </div>`;
+                $('#recommended-list').append(itemHtml);
+            });
+            $('#recommended-list').append('<button class="nav-btn next-btn" ' + (currentPage === totalPages ? 'disabled' : '') + '>►</button>');
+        }
+
+        $(document).on('click', '.next-btn', function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateRecommendedList();
+            }
+        });
+
+        $(document).on('click', '.prev-btn', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                updateRecommendedList();
+            }
+        });
+
+        // 初始更新
+        updateRecommendedList();
     });
 </script>
 {% endblock %}

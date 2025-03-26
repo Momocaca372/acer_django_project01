@@ -1,82 +1,207 @@
-/* care.css */
 .subpage-container {
-    max-width: 1900px;
+    max-width: 1440px;
     width: 100%;
     margin: 0 auto;
+    padding: 0 16px;
 }
 
 .subpage-content-container {
     width: 100%;
-    max-width: 1900px;
-    min-width: 960px;
     margin: 0 auto;
 }
 
 .subpage-row {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-    margin-top: 10px;
+    gap: 16px;
 }
 
+
 .subpage-sidebar {
-    flex: 1 1 200px;
-    max-width: 20%;
-    padding: 20px;
-    background-color: transparent;
+    flex: 0 0 240px;
+    padding: 16px 0;
     font-size: 20px;
 }
 
 .subpage-list-unstyled {
     list-style-type: none;
     padding-left: 0;
-    margin-top: 5px;
+    margin: 0;
 }
 
 .subpage-category {
+    padding: 8px 16px;
     cursor: pointer;
-    margin-bottom: 10px;
 }
 
 .subpage-category a {
     text-decoration: none;
-    color: #333;
+    color: #030303;
+    font-size: 20px;
+    font-weight: 500;
 }
 
 .subpage-category:hover {
-    background-color: #f8f9fa;
+    background-color: #f1f1f1;
 }
 
+
 .subpage-content {
-    flex: 2 1 600px;
-    max-width: 100%;
-    padding: 20px;
-    font-size: 20px;
+    flex: 1 1 0;
+    padding: 16px 0;
+    font-size: 16px;
 }
+
+
+.care-filter {
+    margin: 16px 0;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+}
+
+.filter-row {
+    margin-bottom: 16px;
+}
+
+.filter-row h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #030303;
+}
+
+.filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-btn {
+    padding: 6px 16px; 
+    background: #e0e0e0;
+    border-radius: 16px;
+    text-decoration: none;
+    color: #030303;
+    font-size: 16px; 
+    transition: background-color 0.2s;
+}
+
+.filter-btn:hover {
+    background: #d0d0d0;
+}
+
+.filter-btn.active {
+    background: #ff5722;
+    color: #fff;
+}
+
+
+.recommended-products {
+    margin: 16px 0;
+}
+
+.recommended-products h3 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.recommended-container {
+    width: 100%;
+}
+
+.recommended-list {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.recommended-item {
+    flex: 0 0 auto;
+    width: 140px;
+    padding: 8px;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.recommended-link {
+    text-decoration: none;
+    color: #030303;
+    display: block;
+}
+
+.recommended-item img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.recommended-info {
+    margin: 8px 0;
+}
+
+.recommended-name {
+    display: block;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recommended-price {
+    display: block;
+    font-size: 14px;
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.nav-btn {
+    flex: 0 0 auto;
+    background: #f1f1f1;
+    border: none;
+    font-size: 18px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 5px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-btn:hover {
+    background: #ddd;
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 
 .subpage-products {
     display: flex;
     flex-direction: column;
-    gap: 0; /* 確保上下無間距 */
+    gap: 16px;
 }
 
 .followed-product-item {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
+    gap: 16px;
+    padding: 16px; 
     background: #fff;
-    border-radius: 0; /* 移除圓角，讓上下貼合更自然 */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* 減輕陰影，避免過多重疊感 */
-    width: 100%;
-    box-sizing: border-box;
-    margin: 0; /* 移除外邊距 */
-    border-bottom: 1px solid #ddd; /* 添加底線分隔，避免完全黏在一起 */
+    border-radius: 8px;
+    transition: background-color 0.2s;
 }
 
-.followed-product-item:last-child {
-    border-bottom: none; /* 最後一項移除底線 */
+.followed-product-item:hover {
+    background-color: #f5f5f5;
 }
 
 .rank {
@@ -84,51 +209,54 @@
     color: #ff5722;
     min-width: 20px;
     text-align: center;
+    font-size: 16px; 
 }
 
 .store-logo {
-    width: 40px;
-    height: 40px;
+    width: 48px; 
+    height: 48px; 
     object-fit: contain;
 }
 
 .product-link {
     display: flex;
     align-items: center;
-    gap: 15px;
-    text-decoration: none; /* 移除底線 */
-    color: #333;
+    gap: 16px;
+    text-decoration: none;
+    color: #030303;
     flex-grow: 1;
 }
 
 .product-name {
     text-align: left;
-    font-size: 16px;
-    color: #333;
+    font-size: 16px; 
+    color: #030303;
 }
 
 .right-aligned {
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-left: auto; /* 將價格、購買、愛心靠右 */
+    gap: 16px;
+    margin-left: auto;
 }
 
 .product-price {
-    min-width: 100px;
+    min-width: 80px;
     text-align: left;
-    font-weight: bold;
+    font-weight: 500;
     color: #dc3545;
+    font-size: 16px; 
 }
 
 .buy-btn {
     background: #ff9800;
-    color: white;
+    color: #fff;
     border: none;
-    padding: 5px 10px;
+    padding: 6px 12px; 
     border-radius: 5px;
     cursor: pointer;
     text-decoration: none;
+    font-size: 16px; 
 }
 
 .buy-btn:hover {
@@ -157,19 +285,56 @@
     background-size: contain;
 }
 
-@media (max-width: 992px) {
-    .subpage-sidebar, .subpage-content {
-        max-width: 100%;
-        flex: 1 1 100%;
+/* 響應式設計*/
+@media (max-width: 1312px) {
+    .subpage-sidebar {
+        flex: 0 0 72px;
+        text-align: center;
     }
+    .subpage-category {
+        padding: 16px 0;
+    }
+}
 
+@media (max-width: 960px) {
+    .subpage-sidebar {
+        display: none;
+    }
+    .subpage-content {
+        width: 100%;
+    }
     .followed-product-item {
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
     }
-
     .right-aligned {
         margin-left: 0;
         justify-content: flex-start;
+    }
+}
+
+@media (max-width: 600px) {
+    .filter-btn {
+        padding: 4px 12px; 
+        font-size: 14px; 
+    }
+    .recommended-item {
+        width: 120px;
+    }
+    .recommended-name, .recommended-price {
+        font-size: 12px;
+    }
+    .followed-product-item {
+        padding: 12px; 
+    }
+    .store-logo {
+        width: 40px; 
+        height: 40px;
+    }
+    .product-name, .product-price, .buy-btn {
+        font-size: 14px; 
+    }
+    .buy-btn {
+        padding: 5px 10px; 
     }
 }

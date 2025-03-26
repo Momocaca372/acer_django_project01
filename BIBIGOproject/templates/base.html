@@ -2,9 +2,9 @@
 <html lang="zh-Hant">
 <head>
     {% load static %}
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'base.css' %}">
     {% block extra_styles %}
     <link rel="stylesheet" href="{% static 'subpage.css' %}">
@@ -61,8 +61,7 @@
     </header>
 
     <main class="main-content">
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
 
     <!-- 左下角的按鈕 -->
@@ -72,5 +71,90 @@
     <footer class="footer">
         <p>© 2025 bibigo. 版權所有。</p>
     </footer>
+
+    <!-- 人工客服浮動按鈕與表單 -->
+    <div class="customer-service-floating">
+        <img src="{% static '客服.png' %}" alt="人工客服" class="customer-service-icon" id="customer-service-toggle">
+        <div class="customer-service-content" id="customer-service-content" style="display: none;">
+            {% if request.session.user_email %}
+            <section class="customer-service">
+                <h2 class="service-title">聯絡客服</h2>
+                <div class="chat-box">
+                    <form id="chat-form" class="chat-input" method="POST" action="{% url 'contact_view' %}">
+                        {% csrf_token %}
+                        <textarea id="user-input" name="message" placeholder="請輸入您的問題..." required></textarea>
+                        <button type="submit">送出</button>
+                    </form>
+                </div>
+            </section>
+            {% else %}
+            <section class="customer-service">
+                <h2 class="service-title">請先登入</h2>
+                <p style="text-align: center;">您需要登入才能使用客服功能。</p>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 回到頂部按鈕 -->
+    <button id="back-to-top" title="回到頂部">↑</button>
+
+    <!-- jQuery 和腳本 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 人工客服展開/收起並檢查登入狀態
+            $('#customer-service-toggle').on('click', function() {
+                const $content = $('#customer-service-content');
+                const isLoggedIn = '{{ request.session.user_email|default:"" }}' !== '';
+
+                if ($content.is(':visible')) {
+                    $content.hide();
+                } else {
+                    if (!isLoggedIn) {
+                        window.location.href = '/myapp/login/?next=' + encodeURIComponent(window.location.pathname);
+                    } else {
+                        $content.show();
+                    }
+                }
+            });
+
+            // 表單提交後清空並提示
+            $('#chat-form').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '{% url "contact_view" %}',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            $('#user-input').val('');
+                            alert('您的訊息已成功送出，我們會盡快回覆您！');
+                        } else {
+                            alert('送出失敗：' + response.error);
+                        }
+                    },
+                    error: function(xhr) {
+                        alert('送出失敗，請稍後再試。');
+                    }
+                });
+            });
+
+            // 回到頂部按鈕邏輯
+            const backToTopButton = $('#back-to-top');
+            $(window).on('scroll', function() {
+                if ($(window).scrollTop() > 100) {
+                    backToTopButton.show();
+                } else {
+                    backToTopButton.hide();
+                }
+            });
+
+            backToTopButton.on('click', function() {
+                $('html, body').animate({ scrollTop: 0 }, 'smooth');
+            });
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

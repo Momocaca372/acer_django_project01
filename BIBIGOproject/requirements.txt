@@ -4,3 +4,10 @@ django_heroku
 requests
 firebase_admin
 pyrebase4
+pandas
+jieba
+nltk
+joblib
+numpy
+gensim
+scikit-learn
