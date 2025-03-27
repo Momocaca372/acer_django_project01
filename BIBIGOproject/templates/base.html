@@ -9,6 +9,26 @@
     {% block extra_styles %}
     {% endblock %}
     <title>bibigo</title>
+    <style>
+        /* 左下角按鈕樣式 */
+        .btn-left-bottom {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-left-bottom:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
     <!-- 頁首 -->
@@ -34,10 +54,12 @@
         </div>
     </header>
 
-    <!-- 主要內容區 -->
     <main class="main-content">
         {% block content %}{% endblock %}
     </main>
+
+    <!-- 左下角的按鈕 -->
+    <a href="/myapp/chat_response" class="btn-left-bottom">聯絡客服</a>
 
     <!-- 頁尾 -->
     <footer class="footer">

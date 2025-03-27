@@ -243,9 +243,10 @@ def recommand_list_generator(top_n=50,df_product=None,vectorizer=None):
     conn.close()
     
 if __name__ == "__main__":
-    print(most_similar_filter("鈦合金眼鏡",40))
+   pass
 
     
     
     
+
     

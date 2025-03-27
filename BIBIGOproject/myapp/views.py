@@ -618,3 +618,4 @@ def create_vec_view(request):
         return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"success": False})
+

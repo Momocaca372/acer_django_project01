@@ -19,3 +19,4 @@ urlpatterns = [
     path('contact_view/', views.contact_view, name='contact_view'),
     path('createvec/', views.create_vec_view, name='create_vec_view'),
 ]
+
