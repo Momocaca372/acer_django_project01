@@ -128,4 +128,12 @@ django_heroku.settings(locals())
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField" #自動id設定
+
+CUSTOMER_SERVICE_EMAILS = ['xuejxup@gmail.com', 'eliste5638@gmail.com', 'felix58102003@gmail.com','menglin89923@gmail.com']
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'xuejxup@gmail.com'
+EMAIL_HOST_PASSWORD = 'qovt jcmp snoe kbwt'
